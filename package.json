@@ -1,0 +1,10 @@
+{
+  "packageManager": "yarn@3.6.3",
+  "name": "ultra-chateg",
+  "version": "1.0.0",
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  }
+}
