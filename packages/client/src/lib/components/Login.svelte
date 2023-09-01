@@ -3,10 +3,12 @@
 	import BlockInCenter from './BlockInCenter.svelte';
 	import type {LoginInput} from '../features/auth/types'
 	import Icon from '@iconify/svelte';
-	import core from '$lib/bootstrap/core';
+	import { goto as navigate } from '$app/navigation';
+	import type { AuthData, AuthDataStore } from '$lib/features/auth/AuthStore';
 
+	export let login: (data: LoginInput) => void | Promise<void>;
+	export let authData: AuthDataStore;
 
-	const {authQueryService} = core;
 
 	const formData: LoginInput = {
 		login: '',
@@ -15,16 +17,14 @@
 	};
 	let isErrorDisplayed: boolean = false;
 
-	// const { error, userData } = authSystem;
-	// userData.subscribe((value) => {
-	// 	// if (value) push('/me');
-	// });
-	// error.subscribe((value) => {
-	// 	isErrorDisplayed = !!value;
-	// });
+	$: {
+		if(authData) {
+			navigate('/');
+		}
+	}
 
 	const handleLogin = () => {
-		authQueryService.login(formData)
+		login(formData);
 	};
 
 	const handleCloseError = () => {

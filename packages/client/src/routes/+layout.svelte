@@ -1,7 +1,5 @@
-<script>
-	import '../app.postcss';
-	import core from '$lib/bootstrap/core';
-	
+<script lang="ts">
+  import '../app.postcss';
 </script>
 
 <slot />

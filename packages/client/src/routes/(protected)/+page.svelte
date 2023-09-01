@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { PageData } from './$types';
+	import type { PageData } from "./$types";
+
   export let data: PageData;
 
   console.log('DATA', data);
@@ -8,5 +9,5 @@
 
 
 <div>
-  <h1 class="bg-slate-900">Welcome to SvelteKit</h1>
+  <h1>Welcome to SvelteKit</h1>
 </div>
