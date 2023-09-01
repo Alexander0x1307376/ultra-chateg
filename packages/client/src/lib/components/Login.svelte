@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import BlockInCenter from './BlockInCenter.svelte';
-	import type {LoginData} from '../features/auth/types'
+	import type {LoginInput} from '../features/auth/types'
 	import Icon from '@iconify/svelte';
-	// import { authSystem } from '../lib/features/auth/authSystemInstance';
+	import core from '$lib/bootstrap/core';
 
-	const formData: LoginData = {
+
+	const {authQueryService} = core;
+
+	const formData: LoginInput = {
 		login: '',
 		password: '',
 		rememberMe: false
@@ -21,7 +24,7 @@
 	// });
 
 	const handleLogin = () => {
-		// authSystem.login(formData);
+		authQueryService.login(formData)
 	};
 
 	const handleCloseError = () => {
