@@ -1,13 +1,6 @@
 <script lang="ts">
-	import type { PageData } from "./$types";
-
-  export let data: PageData;
-
-  console.log('DATA', data);
-
+	import Start from '$lib/pages/Start.svelte';
 </script>
 
-
-<div>
-  <h1>Welcome to SvelteKit</h1>
-</div>
+<!-- route / -->
+<Start />

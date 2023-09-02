@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import BlockInCenter from './BlockInCenter.svelte';
+	import BlockInCenter from '../components/BlockInCenter.svelte';
 	import type {LoginInput} from '../features/auth/types'
 	import Icon from '@iconify/svelte';
 	import { goto as navigate } from '$app/navigation';

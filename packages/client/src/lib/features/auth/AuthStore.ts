@@ -1,4 +1,4 @@
-import type { IStore } from '$lib/utils/IStore';
+import type { IStore } from '$lib/interfaces/IStore';
 import type { AuthResponse } from './types';
 
 export type AuthData = AuthResponse;

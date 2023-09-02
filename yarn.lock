@@ -2764,8 +2764,9 @@ __metadata:
     postcss: ^8.4.24
     postcss-load-config: ^4.0.1
     prettier: ^2.8.0
-    prettier-plugin-svelte: ^2.10.1
+    prettier-plugin-svelte: 2.10.1
     socket.io-client: ^4.7.2
+    string-to-color: ^2.2.2
     svelte: ^4.0.5
     svelte-check: ^3.4.3
     svelte-kit-inspector: ^1.0.3
@@ -2853,6 +2854,13 @@ __metadata:
   bin:
     color-support: bin.js
   checksum: 9b7356817670b9a13a26ca5af1c21615463b500783b739b7634a0c2047c16cef4b2865d7576875c31c3cddf9dd621fa19285e628f20198b233a5cfdda6d0793b
+  languageName: node
+  linkType: hard
+
+"colornames@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "colornames@npm:1.1.1"
+  checksum: a97df66bde2a0efb592870f790bae2ffcbf2f9e30c0064783a2941be6713f0ac2acfa3bf1baf70bb423d99526f4fc761bf311fac94aa18ed642d77932352f864
   languageName: node
   linkType: hard
 
@@ -4192,6 +4200,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hex-rgb@npm:^4.1.0":
+  version: 4.3.0
+  resolution: "hex-rgb@npm:4.3.0"
+  checksum: e654648db8647446f0111c68690d9b340eb192a93c8b2c6789a2b8deb5c20e757515ae209c5ae67074acfddf8575f9fc645d4ffaa0596d859457b08e180d791d
+  languageName: node
+  linkType: hard
+
 "html-escaper@npm:^2.0.0":
   version: 2.0.2
   resolution: "html-escaper@npm:2.0.2"
@@ -5259,6 +5274,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.padend@npm:^4.6.1":
+  version: 4.6.1
+  resolution: "lodash.padend@npm:4.6.1"
+  checksum: c2e6e789debf83b98f5c085305cdcfff1067e7a31bda2a110fd765d3c11a99edfbeef570d9ef737ab3212006bdb8114e77622e518c18c1fce52b8fdfd9dab685
+  languageName: node
+  linkType: hard
+
+"lodash.trimstart@npm:^4.5.1":
+  version: 4.5.1
+  resolution: "lodash.trimstart@npm:4.5.1"
+  checksum: 4b2d37505ac15f501f4f2378928455a40e858fa56c924494dbc21d5d828c55e821cda8543f25fe265e3d552937e915264a2567ba9291a172262c24c33e9ad6b0
+  languageName: node
+  linkType: hard
+
+"lodash.words@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "lodash.words@npm:4.2.0"
+  checksum: 287d617ffa3fb453b6925620f04fa195c801590833fd9336c7e80c36ce105d06613ad0455ad368738fb40b36fd5f635b85f837fc7f584b73e03365482acd6e7a
+  languageName: node
+  linkType: hard
+
 "loupe@npm:^2.3.1, loupe@npm:^2.3.6":
   version: 2.3.6
   resolution: "loupe@npm:2.3.6"
@@ -6235,7 +6271,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-svelte@npm:^2.10.1":
+"prettier-plugin-svelte@npm:2.10.1":
   version: 2.10.1
   resolution: "prettier-plugin-svelte@npm:2.10.1"
   peerDependencies:
@@ -6500,6 +6536,13 @@ __metadata:
   version: 1.0.4
   resolution: "reusify@npm:1.0.4"
   checksum: c3076ebcc22a6bc252cb0b9c77561795256c22b757f40c0d8110b1300723f15ec0fc8685e8d4ea6d7666f36c79ccc793b1939c748bf36f18f542744a4e379fcc
+  languageName: node
+  linkType: hard
+
+"rgb-hex@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "rgb-hex@npm:3.0.0"
+  checksum: 45959f777c9a078230cd20cdef2db159856ab74c1115ec6cb096801fdf223f533439d26555f2b39f2d9e1547f25588c6a3462dc19630a71dc090204b0d9e9d9f
   languageName: node
   linkType: hard
 
@@ -6944,6 +6987,20 @@ __metadata:
     char-regex: ^1.0.2
     strip-ansi: ^6.0.0
   checksum: ce85533ef5113fcb7e522bcf9e62cb33871aa99b3729cec5595f4447f660b0cefd542ca6df4150c97a677d58b0cb727a3fe09ac1de94071d05526c73579bf505
+  languageName: node
+  linkType: hard
+
+"string-to-color@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "string-to-color@npm:2.2.2"
+  dependencies:
+    colornames: ^1.1.1
+    hex-rgb: ^4.1.0
+    lodash.padend: ^4.6.1
+    lodash.trimstart: ^4.5.1
+    lodash.words: ^4.2.0
+    rgb-hex: ^3.0.0
+  checksum: 9ffe859f387f5a2da30794ea4399d43b2f701acc2c0429f9aed9cce52f873f9ec40ad6b64eb5e5f030d602e38dca9a4b8f39f41c33d287b4b9d2043e4a513508
   languageName: node
   linkType: hard
 

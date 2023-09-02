@@ -1,8 +1,8 @@
-import type { IInitiable } from '$lib/utils/IInitiable';
+import type { IInitiable } from '$lib/interfaces/IInitiable';
 import { type Writable, writable } from 'svelte/store';
 import type { AuthStore } from '../auth/AuthStore';
 import { Socket, io } from 'socket.io-client';
-import type { IStore } from '$lib/utils/IStore';
+import type { IStore } from '$lib/interfaces/IStore';
 
 export type SocketData = Socket | undefined;
 
