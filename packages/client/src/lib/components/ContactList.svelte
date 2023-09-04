@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Ava from './Ava.svelte';
 
-	export let items: { id: number; name: string; avaUrl?: string; url: string }[];
+	export let items: { id: string; name: string; avaUrl?: string; url: string }[];
 </script>
 
 {#each items as item}

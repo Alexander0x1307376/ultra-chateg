@@ -7,6 +7,7 @@
 	export let icon: string | undefined = undefined;
 	export let label: string | undefined = undefined;
 	export let type: ButtonType = 'default';
+	export let htmlType: 'button' | 'submit' | 'reset' | null | undefined = 'button';
 
 	const dispatch = createEventDispatcher();
 
@@ -18,7 +19,7 @@
 
 <button
 	on:click={() => dispatch('click')}
-	type="button"
+	type={htmlType}
 	class="{icon && !label ? 'btn-icon' : 'btn'} {styles[type]}"
 >
 	{#if icon}
