@@ -6,7 +6,9 @@
 	import AddScope from '$lib/components/scopes/AddScope.svelte';
 	import Scope from '$lib/components/scopes/Scope.svelte';
 	import DndContactList from '$lib/components/DndContactList.svelte';
-	import type { Scope as ScopeData } from '$lib/entities/entities';
+	import type { Scope as ScopeData, User } from '$lib/entities/entities';
+	import { fade, scale } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 
 	// #region Старое
 	// const users: Record<string, User> = {
@@ -23,11 +25,7 @@
 	// };
 	// #endregion
 
-	const user = {
-		id: '111',
-		name: 'Vasya Pupkin'
-	};
-
+	export let currentUser: User;
 	// все члены канала
 	let channelMembers = [
 		{ id: '001', name: 'Николай Иванович' },
@@ -47,6 +45,21 @@
 	let isContactDragging: boolean = false;
 	let scopeDragType: 'scope' | 'contacts' = 'scope';
 
+	// scopesView и связанная с ним логика нужны для корректной отработки анимации
+	// на элементе формы добавления скопа, который для этого пришлось сделать частью списка
+	type ScopeView = {
+		key: string | 'last';
+		item?: ScopeData;
+	};
+
+	$: scopesView = [
+		...scopes.map((scope) => ({
+			key: scope.id,
+			item: scope
+		})),
+		{ key: 'last' }
+	] as ScopeView[];
+
 	$: {
 		scopeDragType = isContactDragging ? 'contacts' : 'scope';
 	}
@@ -55,6 +68,7 @@
 		console.log({ scopes });
 	}
 
+	// #region Изменеине данных
 	const handleScopeUpdated = ({ detail }: { detail: ScopeData }) => {
 		const scopeIndex = scopes.findIndex((item) => item.id === detail.id);
 		if (scopeIndex !== -1) {
@@ -97,6 +111,7 @@
 		});
 		scopes = scopes;
 	};
+	// #endregion
 </script>
 
 <!-- route /[channelId] - страница конкретного канала -->
@@ -121,8 +136,8 @@
 	</div>
 	<!-- bottom -->
 	<div slot="bottom" class="flex items-center space-x-2">
-		<Ava label={user.name} />
-		<span>{user.name}</span>
+		<Ava label={currentUser.name} />
+		<span>{currentUser.name}</span>
 	</div>
 
 	<!-- main content -->
@@ -142,23 +157,30 @@
 		<div class="grow h-full w-full flex space-x-2">
 			<!-- скопы -->
 			<div class="relative grow">
-				<div class="absolute inset-0 flex flex-col space-y-2 overflow-auto">
-					{#each scopes as scope (scope.id)}
-						<div>
-							<Scope
-								scopeData={scope}
-								dragType={scopeDragType}
-								on:scopeUpdated={handleScopeUpdated}
-								on:removeScope={() => handleRemoveScope(scope.id)}
-							/>
-						</div>
-					{/each}
-					<div class="h-48">
-						<AddScope
-							on:addScope={(e) => {
-								handleCreateScope(e);
-							}}
-						/>
+				<div class="absolute inset-0 overflow-y-auto overflow-x-hidden">
+					<div class="flex flex-col space-y-2 h-full">
+						{#each scopesView as scopeView (scopeView.key)}
+							<div animate:flip={{ duration: 250 }} in:fade out:scale|local>
+								{#if scopeView.item}
+									<Scope
+										scopeData={scopeView.item}
+										dragType={scopeDragType}
+										on:scopeUpdated={handleScopeUpdated}
+										on:removeScope={() => {
+											scopeView.item && handleRemoveScope(scopeView.item.id);
+										}}
+									/>
+								{:else}
+									<div class="h-48 mb-5">
+										<AddScope
+											on:addScope={(e) => {
+												handleCreateScope(e);
+											}}
+										/>
+									</div>
+								{/if}
+							</div>
+						{/each}
 					</div>
 				</div>
 			</div>

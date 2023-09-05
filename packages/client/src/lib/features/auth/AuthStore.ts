@@ -1,8 +1,13 @@
+import type { User } from '$lib/entities/entities';
 import type { IStore } from '$lib/interfaces/IStore';
-import type { AuthResponse } from './types';
 
-export type AuthData = AuthResponse;
-export type AuthDataStore = AuthData | undefined;
+export type AuthDataStore =
+	| {
+			userData: User;
+			accessToken: string;
+			refreshToken: string;
+	  }
+	| undefined;
 
 export class AuthStore implements IStore<AuthDataStore> {
 	private _store: AuthDataStore;

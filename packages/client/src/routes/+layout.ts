@@ -9,12 +9,6 @@ export const load: LayoutLoad = async () => {
 	const core = bootstrap();
 	const { authStore, authQueryService } = core;
 
-	authStore.subscribe((authData) => {
-		if (authData) {
-			console.log('INIT WEBSOCKETS', authData);
-		}
-	});
-
 	const initialRefresh = async () => {
 		console.log('INITIAL_REFRESH');
 		await authQueryService.refresh();

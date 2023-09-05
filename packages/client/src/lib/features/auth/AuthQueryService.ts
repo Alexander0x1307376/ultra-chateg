@@ -1,7 +1,8 @@
 import axios from 'axios';
 import type { AuthResponse, LoginInput, RegistrationInput } from './types';
-import type { AuthStore } from './AuthStore';
+import type { AuthDataStore, AuthStore } from './AuthStore';
 import type { HttpClient } from '../http/HttpClient';
+import type { User } from '$lib/entities/entities';
 
 export class AuthQueryService {
 	constructor(
@@ -15,14 +16,27 @@ export class AuthQueryService {
 		this.register = this.register.bind(this);
 	}
 
+	private responseToUserData(responseData: AuthResponse): AuthDataStore {
+		const userData: User = { ...responseData.userData, id: responseData.userData.id.toString() };
+		const accessToken = responseData.accessToken;
+		const refreshToken = responseData.refreshToken;
+		return {
+			userData,
+			accessToken,
+			refreshToken
+		};
+	}
+
 	async register(data: RegistrationInput) {
 		const response = await this.httpClient.post<AuthResponse, RegistrationInput>('/register', data);
-		this.authSystem.set(response.data);
+		const storeData = this.responseToUserData(response.data);
+		this.authSystem.set(storeData);
 	}
 
 	async login(data: LoginInput) {
 		const response = await this.httpClient.post<AuthResponse, LoginInput>('/login', data);
-		this.authSystem.set(response.data);
+		const storeData = this.responseToUserData(response.data);
+		this.authSystem.set(storeData);
 	}
 
 	async refresh() {
@@ -41,7 +55,8 @@ export class AuthQueryService {
 				'[AuthQueryService]: refreshing sucsess. new refreshToken',
 				refreshResponse.data.refreshToken
 			);
-			this.authSystem.set(refreshResponse.data);
+			const storeData = this.responseToUserData(refreshResponse.data);
+			this.authSystem.set(storeData);
 			return true;
 		} catch (e) {
 			this.authSystem.clear();
