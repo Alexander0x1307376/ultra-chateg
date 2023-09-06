@@ -1,19 +1,49 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import Button from '../Button.svelte';
+	import { getRandomGroupName } from '$lib/utils/randomGroupNames';
 
 	const dispatch = createEventDispatcher<{ addScope: string }>();
 	let isFormOpened: boolean = false;
+	export let checkName: ((value: string) => boolean) | undefined = undefined;
 
 	let scopeName = '';
+	let suggestedName = getRandomGroupName();
 
 	const handleAddScope = () => {
-		dispatch('addScope', scopeName);
+		const canEmit = checkName?.(scopeName);
+		if (canEmit) {
+			dispatch('addScope', scopeName ? scopeName : suggestedName);
+			scopeName = '';
+			suggestedName = getRandomGroupName();
+		} else {
+			blinkError();
+		}
 	};
 
 	const handleToggleForm = () => {
 		isFormOpened = !isFormOpened;
+	};
+
+	const blinkError = () => {
+		buttonState = 'error';
+		setTimeout(() => {
+			buttonState = 'default';
+		}, 1000);
+	};
+
+	type ButtonStateType = 'default' | 'error';
+	let buttonState: ButtonStateType = 'default';
+	const buttonStateStyle: Record<ButtonStateType, { label: string; type: string }> = {
+		default: {
+			label: 'Добавить',
+			type: 'default'
+		},
+		error: {
+			label: 'Имя должно быть уникально',
+			type: 'error'
+		}
 	};
 </script>
 
@@ -49,11 +79,15 @@
 					class="input"
 					type="text"
 					name="name"
-					placeholder="название"
+					placeholder={suggestedName}
 					bind:value={scopeName}
 				/>
 			</label>
-			<Button label="Добавить" htmlType="submit" />
+			<Button
+				label={buttonStateStyle[buttonState].label}
+				type={buttonStateStyle[buttonState].type}
+				htmlType="submit"
+			/>
 		</form>
 	</div>
 {/if}

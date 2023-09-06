@@ -68,6 +68,8 @@
 		console.log({ scopes });
 	}
 
+	const handleCheckNewScopeName = (value: string) => !scopes.some((item) => item.name === value);
+
 	// #region Изменеине данных
 	const handleScopeUpdated = ({ detail }: { detail: ScopeData }) => {
 		const scopeIndex = scopes.findIndex((item) => item.id === detail.id);
@@ -173,6 +175,7 @@
 								{:else}
 									<div class="h-48 mb-5">
 										<AddScope
+											checkName={handleCheckNewScopeName}
 											on:addScope={(e) => {
 												handleCreateScope(e);
 											}}

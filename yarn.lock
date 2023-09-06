@@ -1609,6 +1609,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash@npm:^4.14.197":
+  version: 4.14.197
+  resolution: "@types/lodash@npm:4.14.197"
+  checksum: 53d7567d1704de76cf33266c78062e0fd722d4b846e5b1417d0b6ef0ee41c0d9c451b92bc34f73d5f1fcc45c7d36511e92f6f47a9279b48157ba60a92ddaa078
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:*":
   version: 3.0.1
   resolution: "@types/mime@npm:3.0.1"
@@ -2753,6 +2760,7 @@ __metadata:
     "@sveltejs/kit": ^1.20.4
     "@tailwindcss/forms": ^0.5.6
     "@tauri-apps/cli": ^1.4.0
+    "@types/lodash": ^4.14.197
     "@types/node": ^20.5.7
     "@typescript-eslint/eslint-plugin": ^5.45.0
     "@typescript-eslint/parser": ^5.45.0
@@ -2761,6 +2769,7 @@ __metadata:
     eslint: ^8.28.0
     eslint-config-prettier: ^8.5.0
     eslint-plugin-svelte: ^2.30.0
+    lodash: ^4.17.21
     postcss: ^8.4.24
     postcss-load-config: ^4.0.1
     prettier: ^2.8.0
@@ -5293,6 +5302,13 @@ __metadata:
   version: 4.2.0
   resolution: "lodash.words@npm:4.2.0"
   checksum: 287d617ffa3fb453b6925620f04fa195c801590833fd9336c7e80c36ce105d06613ad0455ad368738fb40b36fd5f635b85f837fc7f584b73e03365482acd6e7a
+  languageName: node
+  linkType: hard
+
+"lodash@npm:^4.17.21":
+  version: 4.17.21
+  resolution: "lodash@npm:4.17.21"
+  checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
   languageName: node
   linkType: hard
 

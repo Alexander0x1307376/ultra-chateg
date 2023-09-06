@@ -1,8 +1,10 @@
+<script lang="ts" context="module">
+	export type ButtonType = 'default' | 'transparent' | 'error' | string;
+</script>
+
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { createEventDispatcher } from 'svelte';
-
-	type ButtonType = 'default' | 'transparent';
 
 	export let icon: string | undefined = undefined;
 	export let label: string | undefined = undefined;
@@ -13,7 +15,8 @@
 
 	const styles: Record<ButtonType, string> = {
 		default: 'variant-ghost-surface',
-		transparent: '!bg-transparent'
+		transparent: '!bg-transparent',
+		error: 'variant-ghost-error'
 	};
 </script>
 
