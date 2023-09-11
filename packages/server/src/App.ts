@@ -2,7 +2,6 @@ import { inject, injectable } from "inversify";
 import express, { Express, urlencoded } from "express";
 import { TYPES } from "./injectableTypes";
 import { IEnvironmentService } from "./features/config/IEnvironmentService";
-import { DataSource } from "./features/dataSource/DataSource";
 import { MainController } from "./features/common/MainController";
 import { AuthController } from "./features/auth/AuthController";
 import { ExceptionFilter } from "./features/exceptions/ExceptionFilter";
@@ -16,20 +15,28 @@ import cors, { CorsOptions } from "cors";
 import { json } from "body-parser";
 import cookieParser from "cookie-parser";
 import { WebsocketSystem } from "./features/webSockets/WebsocketSystem";
+import { UsersRealtimeService } from "./features/users/UsersRealtimeService";
+import { PageRealtimeService } from "./features/pages/PageRealtimeService";
+import { ChannelsRemoteStore } from "./features/channels/ChannelsRemoteStore";
+import { Server as SocketServer } from "socket.io";
 
 @injectable()
 export class App {
   httpApp: Express;
 
-  server: HttpServer;
-  port: number;
-  corsOptions: CorsOptions;
-  corsOrigin: string;
-  websocketSystem: WebsocketSystem;
+  _server: HttpServer;
+  _port: number;
+  _corsOptions: CorsOptions;
+  _corsOrigin: string;
+  _websocketSystem: WebsocketSystem;
+  _websocketServer: SocketServer;
+
+  _pageRealtimeService: PageRealtimeService;
+  _channelsRemoteStore: ChannelsRemoteStore;
+
   constructor(
     @inject(TYPES.Logger) private logger: ILogger,
     @inject(TYPES.EnvironmentService) private environmentService: IEnvironmentService,
-    @inject(TYPES.DataSource) private dataSource: DataSource,
     @inject(TYPES.MainController) private mainController: MainController,
     @inject(TYPES.UsersController) private usersController: UsersController,
     @inject(TYPES.AuthController) private authController: AuthController,
@@ -37,22 +44,31 @@ export class App {
     @inject(TYPES.AuthMiddleware) private authMiddleware: AuthMiddleware,
     @inject(TYPES.AuthService) private authService: AuthService,
     @inject(TYPES.UsersService) private usersSerivce: UsersService,
+    @inject(TYPES.UsersRealtimeService) private usersRealtimeService: UsersRealtimeService,
   ) {
     this.httpApp = express();
-    this.port = parseInt(this.environmentService.get("PORT"));
-    this.corsOptions = {
+    this._port = parseInt(this.environmentService.get("PORT"));
+    this._corsOptions = {
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE"],
     };
-    this.websocketSystem = new WebsocketSystem(
+    this._websocketSystem = new WebsocketSystem(
       this.httpApp,
-      {
-        cors: this.corsOptions,
-      },
+      { cors: this._corsOptions },
       this.authService,
       this.usersSerivce,
+      this.usersRealtimeService,
       this.logger,
     );
+
+    this._websocketServer = this._websocketSystem.socketServer;
+    this._pageRealtimeService = new PageRealtimeService();
+    this._channelsRemoteStore = new ChannelsRemoteStore(this._websocketServer);
+  }
+
+  private handleRealtimeSystems() {
+    // this._websocketSystem.addHandler(this._pageRealtimeService.socketHandler);
+    this._websocketSystem.addHandler(this._channelsRemoteStore.socketHandler);
   }
 
   private useRoutes() {
@@ -78,12 +94,13 @@ export class App {
     this.useMiddleware();
     this.useRoutes();
 
-    this.websocketSystem.init();
+    this._websocketSystem.init();
+    this.handleRealtimeSystems();
 
     this.useExeptionFilters();
 
-    this.websocketSystem.listen(this.port, () => {
-      this.logger.log(`[App] API сервер запущен на http://localhost:${this.port}`);
+    this._websocketSystem.listen(this._port, () => {
+      this.logger.log(`[App] API сервер запущен на http://localhost:${this._port}`);
     });
   }
 }

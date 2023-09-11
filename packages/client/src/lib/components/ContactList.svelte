@@ -1,7 +1,11 @@
+<script context="module" lang="ts">
+	export type ContactItem = { id: string; name: string; avaUrl?: string; url: string };
+</script>
+
 <script lang="ts">
 	import Ava from './Ava.svelte';
 
-	export let items: { id: string; name: string; avaUrl?: string; url: string }[];
+	export let items: ContactItem[];
 </script>
 
 {#each items as item}

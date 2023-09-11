@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import BlockInCenter from '../components/BlockInCenter.svelte';
-	import type {LoginInput} from '../features/auth/types'
+	import type { LoginInput } from '../features/auth/types';
 	import Icon from '@iconify/svelte';
 	import { goto as navigate } from '$app/navigation';
-	import type { AuthData, AuthDataStore } from '$lib/features/auth/AuthStore';
+	import type { AuthDataStore } from '$lib/features/auth/AuthStore';
 
 	export let login: (data: LoginInput) => void | Promise<void>;
 	export let authData: AuthDataStore;
-
 
 	const formData: LoginInput = {
 		login: '',
@@ -18,7 +17,7 @@
 	let isErrorDisplayed: boolean = false;
 
 	$: {
-		if(authData) {
+		if (authData) {
 			navigate('/');
 		}
 	}

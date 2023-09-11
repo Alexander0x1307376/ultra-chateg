@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-	export type ButtonType = 'default' | 'transparent' | 'error' | string;
+	export type ButtonType = 'default' | 'transparent' | 'error';
 </script>
 
 <script lang="ts">

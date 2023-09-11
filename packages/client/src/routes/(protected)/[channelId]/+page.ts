@@ -1,4 +1,5 @@
 import type { PageLoad } from './$types';
+export const prerender = false;
 
 export const load: PageLoad = async ({ params, parent }) => {
 	const { core } = await parent();
@@ -6,6 +7,8 @@ export const load: PageLoad = async ({ params, parent }) => {
 	const { channelId } = params;
 
 	const socket = webSocketConnection.getSocket();
+	console.log('CHANNELS!!!', socket);
+
 	socket?.emit('watch', { page: 'channel', params: { channelId } });
 
 	return {

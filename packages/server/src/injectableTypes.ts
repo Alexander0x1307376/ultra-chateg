@@ -12,6 +12,11 @@ export const TYPES = {
 
   ExceptionFilter: Symbol.for("ExceptionFilter"),
 
+  WebSocketSystem: Symbol.for("WebSocketSystem"),
+
   UsersController: Symbol.for("UsersController"),
   UsersService: Symbol.for("UsersService"),
+  UsersRealtimeService: Symbol.for("UsersRealtimeService"),
+  UsersRealtimeStore: Symbol.for("UsersRealtimeStore"),
+  UsersEmitter: Symbol.for("UsersEmitter"),
 };

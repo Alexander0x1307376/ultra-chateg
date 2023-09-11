@@ -1,5 +1,4 @@
 import { bootstrap } from '$lib/bootstrap/bootstrap';
-import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 
 export const prerender = false;

@@ -1,29 +1,15 @@
+import { injectable } from "inversify";
 import { EventEmitter } from "../eventEmitter/EventEmitter";
-import { UserTransfer } from "./userTypes";
-
-export type UserData = {
-  user: {
-    id: number;
-    name: string;
-    avaUrl?: string;
-  };
-  currentChannel?: string;
-  socketId?: string;
-};
-
-export type UsersRealtimeStateEvents = {
-  userAdded: (user: UserData) => void;
-  userUpdated: (user: UserData) => void;
-  userRemoved: (user: UserData) => void;
-};
+import type { UserData, UserTransfer, UsersRealtimeEvents } from "./userTypes";
 
 /**
  * Хранит всю информацию о состоянии пользователя, находящегося онлайн. Испускает события при изменении данных
  */
-export class UsersRealtimeState {
+@injectable()
+export class UsersRealtimeService {
   constructor(
     private store: Map<number, UserData>,
-    public emitter: EventEmitter<UsersRealtimeStateEvents>,
+    public emitter: EventEmitter<UsersRealtimeEvents>,
   ) {}
 
   getUser(userId: number): UserData {

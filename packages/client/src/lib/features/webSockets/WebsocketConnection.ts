@@ -11,6 +11,11 @@ export class WebsocketConnection implements IInitiable, IStore<SocketData> {
 	private _authStore: AuthStore;
 
 	socket: Writable<SocketData>;
+	private _socket: SocketData;
+
+	getSocket() {
+		return this._socket;
+	}
 
 	constructor(hostUrl: string, authStore: AuthStore) {
 		this._hostUrl = hostUrl;
@@ -19,6 +24,7 @@ export class WebsocketConnection implements IInitiable, IStore<SocketData> {
 		this.socket = writable();
 
 		this.init = this.init.bind(this);
+		this.getSocket = this.getSocket.bind(this);
 	}
 
 	init() {
@@ -39,9 +45,12 @@ export class WebsocketConnection implements IInitiable, IStore<SocketData> {
 			socket.on('connect_error', (error: Error) => {
 				if (error.message === 'NOT_AUTHORIZED') {
 					console.warn('[WebsocketSystem]:error: not authorized');
+				} else {
+					console.warn('[WebsocketSystem]:error: unhandled error', error.message);
 				}
 			});
 			socket.connect();
+			this._socket = socket;
 			this.socket.set(socket);
 		} else {
 			console.warn(`[WebsocketSystem]: no auth data. Initialization failed`);
