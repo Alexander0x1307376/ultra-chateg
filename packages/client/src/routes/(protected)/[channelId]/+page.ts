@@ -3,16 +3,14 @@ export const prerender = false;
 
 export const load: PageLoad = async ({ params, parent }) => {
 	const { core } = await parent();
-	const { authStore, webSocketConnection } = core;
+	const { authStore, channelDetailsRemoteStore } = core;
 	const { channelId } = params;
 
-	const socket = webSocketConnection.getSocket();
-	console.log('CHANNELS!!!', socket);
-
-	socket?.emit('watch', { page: 'channel', params: { channelId } });
+	channelDetailsRemoteStore.channelId = channelId;
 
 	return {
 		authStore,
-		channelId
+		channelId,
+		channelDetailsRemoteStore
 	};
 };

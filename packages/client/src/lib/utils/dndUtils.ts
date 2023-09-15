@@ -8,6 +8,8 @@ export const notInternalDraggingBehaviour = <Item extends { id: string }>(
 		dragEnded?: () => void;
 	}
 ) => {
+	console.log('notInternalDraggingBehaviour!!!!', items);
+
 	let draggingItemData:
 		| {
 				item: any;

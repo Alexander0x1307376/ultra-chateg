@@ -1,5 +1,12 @@
+<script context="module" lang="ts">
+	export type ScopeDataVisual = {
+		id: string;
+		name: string;
+		members: UserVisual[];
+	};
+</script>
+
 <script lang="ts">
-	import type { Scope } from '$lib/entities/entities';
 	import Card from '../Card.svelte';
 	import { flip } from 'svelte/animate';
 	import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
@@ -9,12 +16,13 @@
 	import { cubicIn } from 'svelte/easing';
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '@iconify/svelte';
+	import type { UserVisual } from '$lib/pages/Channel.svelte';
 
-	const dispatch = createEventDispatcher<{ scopeUpdated: Scope; removeScope: void }>();
+	const dispatch = createEventDispatcher<{ scopeUpdated: ScopeDataVisual; removeScope: void }>();
 
 	const FLIP_DURATION_MS = 100;
 
-	export let scopeData: Scope;
+	export let scopeData: ScopeDataVisual;
 	export let dragType: string;
 
 	let dropFromOthersDisabled = false;

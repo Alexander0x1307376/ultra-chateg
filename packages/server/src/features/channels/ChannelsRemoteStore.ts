@@ -2,6 +2,7 @@ import { Socket, Server } from "socket.io";
 import { ISocketHandler } from "../webSockets/ISocketHandler";
 import { UserData } from "../users/userTypes";
 import { nanoid } from "nanoid";
+import { EventEmitter } from "../eventEmitter/EventEmitter";
 
 export type Channel = {
   id: string;
@@ -11,11 +12,6 @@ export type Channel = {
 
 export type CreateChannelInput = {
   name: string;
-};
-
-export type Response = {
-  status: "ok" | "error";
-  message?: string;
 };
 
 export type AckResponse<T> = {
@@ -33,38 +29,47 @@ export type ClientToServerEvents = {
   ) => void;
 };
 export type ServerToClientEvents = {
-  set: (data: Channel[]) => void;
-  remove: (ids: string[]) => void;
-  update: (data: Channel[]) => void;
+  "channels:set": (data: Channel[]) => void;
+  "channels:remove": (ids: string[]) => void;
+  "channels:update": (data: Channel[]) => void;
+};
+
+export type ChannelsRemoteStoreEvents = {
+  updated: (data: Channel[]) => void;
+  removed: (ids: string[]) => void;
 };
 
 export class ChannelsRemoteStore implements ISocketHandler {
   private readonly CHANNEL_CHATROOM = "channels";
-
   private _channels: Channel[];
   private _socketServer: Server<ClientToServerEvents, ServerToClientEvents>;
+  private _emitter: EventEmitter<ChannelsRemoteStoreEvents>;
+  get emitter() {
+    return this._emitter;
+  }
 
   constructor(socketServer: Server) {
     this._channels = [];
+    this._emitter = new EventEmitter();
     this._socketServer = socketServer;
     this.socketHandler = this.socketHandler.bind(this);
     this.updateChannels = this.updateChannels.bind(this);
     this.removeChannels = this.removeChannels.bind(this);
-    this.init = this.init.bind(this);
   }
 
   socketHandler(socket: Socket<ClientToServerEvents, ServerToClientEvents>, userData: UserData) {
     socket.on("channels:subscribe", () => {
-      console.log("[ChannelsRemoteStore]: subscribed", this._channels);
+      console.log("[ChannelsRemoteStore]: subscribed");
       socket.join(this.CHANNEL_CHATROOM);
-      socket.emit("set", this._channels);
+      socket.emit("channels:set", this._channels);
     });
+
     socket.on("channels:unsubscribe", () => {
       console.log("[ChannelsRemoteStore]: unsubscribe");
       socket.leave(this.CHANNEL_CHATROOM);
     });
+
     socket.on("channels:createChannel", (channelInput, response) => {
-      console.log("createChannel", channelInput);
       // проверить наличие канала с таким именем
       const isAlreadyExists = this._channels.some((item) => item.name === channelInput.name);
       if (!channelInput.name) {
@@ -102,16 +107,14 @@ export class ChannelsRemoteStore implements ISocketHandler {
       }
     });
     this._channels = updatedChannels;
-    this._socketServer.in(this.CHANNEL_CHATROOM).emit("update", channels);
+    this._socketServer.in(this.CHANNEL_CHATROOM).emit("channels:update", updatedChannels);
+    this._emitter.emit("updated", updatedChannels);
   }
 
   removeChannels(ids: string[]) {
     const updatedChannels = [...this._channels].filter((item) => !ids.includes(item.id));
     this._channels = updatedChannels;
-    this._socketServer.in(this.CHANNEL_CHATROOM).emit("remove", ids);
-  }
-
-  init() {
-    //
+    this._socketServer.in(this.CHANNEL_CHATROOM).emit("channels:remove", ids);
+    this._emitter.emit("removed", ids);
   }
 }

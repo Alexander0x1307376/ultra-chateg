@@ -19,6 +19,8 @@ import { UsersRealtimeService } from "./features/users/UsersRealtimeService";
 import { PageRealtimeService } from "./features/pages/PageRealtimeService";
 import { ChannelsRemoteStore } from "./features/channels/ChannelsRemoteStore";
 import { Server as SocketServer } from "socket.io";
+import { ChannelDetailsRemoteStore } from "./features/channels/ChannelDetailsRemoteStore";
+import { ChannelDetailsStore } from "./features/channels/ChannelDetailsStore";
 
 @injectable()
 export class App {
@@ -33,6 +35,7 @@ export class App {
 
   _pageRealtimeService: PageRealtimeService;
   _channelsRemoteStore: ChannelsRemoteStore;
+  _channelDetailsRemoteStore: ChannelDetailsRemoteStore;
 
   constructor(
     @inject(TYPES.Logger) private logger: ILogger,
@@ -62,13 +65,15 @@ export class App {
     );
 
     this._websocketServer = this._websocketSystem.socketServer;
-    this._pageRealtimeService = new PageRealtimeService();
     this._channelsRemoteStore = new ChannelsRemoteStore(this._websocketServer);
+
+    const channelDetailsStore = new ChannelDetailsStore(this._channelsRemoteStore, usersRealtimeService);
+    this._channelDetailsRemoteStore = new ChannelDetailsRemoteStore(this._websocketServer, channelDetailsStore);
   }
 
   private handleRealtimeSystems() {
-    // this._websocketSystem.addHandler(this._pageRealtimeService.socketHandler);
     this._websocketSystem.addHandler(this._channelsRemoteStore.socketHandler);
+    this._websocketSystem.addHandler(this._channelDetailsRemoteStore.socketHandler);
   }
 
   private useRoutes() {

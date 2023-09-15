@@ -1,3 +1,16 @@
+<script context="module" lang="ts">
+	export type UserVisual = {
+		id: string;
+		name: string;
+		avaUrl?: string;
+	};
+	export type ScopeDataVisual = {
+		id: string;
+		name: string;
+		members: UserVisual[];
+	};
+</script>
+
 <script lang="ts">
 	import Ava from '$lib/components/Ava.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -6,54 +19,57 @@
 	import AddScope from '$lib/components/scopes/AddScope.svelte';
 	import Scope from '$lib/components/scopes/Scope.svelte';
 	import DndContactList from '$lib/components/DndContactList.svelte';
-	import type { Scope as ScopeData, User } from '$lib/entities/entities';
+	import type { EntityWithAva, Scope as ScopeData, User } from '$lib/entities/entities';
 	import { fade, scale } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import type { ScopeTransfer } from '$lib/features/channels/ChannelDetailsRemoteStore';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
-	// #region Старое
-	// const users: Record<string, User> = {
-	// 	'001': { id: '001', name: 'Николай Иванович' },
-	// 	'002': { id: '002', name: 'КрЕвЕдКо' },
-	// 	'003': { id: '003', name: 'Pussy Destroyer' },
-	// 	'004': { id: '004', name: 'Калич' },
-	// 	'005': { id: '005', name: 'АццкиЙ СоТоНа 8==D' },
-	// 	'006': { id: '006', name: 'Николай Иванович' },
-	// 	'007': { id: '007', name: 'Нагибатор228' },
-	// 	'008': { id: '008', name: 'Pussy Destroyer 666' },
-	// 	'009': { id: '009', name: 'Ататец' },
-	// 	'010': { id: '010', name: 'User 004' }
-	// };
-	// #endregion
+	// members ---> membersVisual ---> socketEmit ---> members
+	// scopes ---> scopesVisual ---> socketEmit ---> scopes
 
 	export let currentUser: User;
-	// все члены канала
-	let channelMembers = [
-		{ id: '001', name: 'Николай Иванович' },
-		{ id: '002', name: 'КрЕвЕдКо' },
-		{ id: '003', name: 'Pussy Destroyer' },
-		{ id: '004', name: 'Калич' },
-		{ id: '005', name: 'АццкиЙ СоТоНа 8==D' },
-		{ id: '006', name: 'Николай Иванович' },
-		{ id: '007', name: 'Нагибатор228' },
-		{ id: '008', name: 'Pussy Destroyer 666' },
-		{ id: '009', name: 'Ататец' },
-		{ id: '010', name: 'User 004' }
-	];
+	export let members: User[];
+	export let scopes: ScopeTransfer[];
 
-	const contactsDragType = 'contacts';
-	let scopes: ScopeData[] = [];
+	// представление данных в dnd-системе
+	let scopesVisual: ScopeDataVisual[] = [];
+
+	$: channelMembers =
+		(members.map((member) => ({
+			id: member.id.toString(),
+			name: member.name
+		})) as EntityWithAva[]) || [];
+
+	// все члены канала
+	// let channelMembers: EntityWithAva[] = [
+	// 	{ id: '001', name: 'Николай Иванович' },
+	// 	{ id: '002', name: 'КрЕвЕдКо' },
+	// 	{ id: '003', name: 'Pussy Destroyer' },
+	// 	{ id: '004', name: 'Калич' },
+	// 	{ id: '005', name: 'АццкиЙ СоТоНа 8==D' },
+	// 	{ id: '006', name: 'Николай Иванович' },
+	// 	{ id: '007', name: 'Нагибатор228' },
+	// 	{ id: '008', name: 'Pussy Destroyer 666' },
+	// 	{ id: '009', name: 'Ататец' },
+	// 	{ id: '010', name: 'User 004' }
+	// ];
+
+	const CONTACTS_DRAG_TYPE = 'contacts';
+	const SCOPE_DRAG_TYPE = 'scope';
 	let isContactDragging: boolean = false;
 	let scopeDragType: 'scope' | 'contacts' = 'scope';
 
-	// scopesView и связанная с ним логика нужны для корректной отработки анимации
-	// на элементе формы добавления скопа, который для этого пришлось сделать частью списка
+	// scopesView и связанная с ним логика нужны для корректной отработки анимации на
+	// элементе формы добавления скопа, который для этого пришлось сделать частью списка
 	type ScopeView = {
 		key: string | 'last';
-		item?: ScopeData;
+		item?: ScopeDataVisual;
 	};
 
 	$: scopesView = [
-		...scopes.map((scope) => ({
+		...scopesVisual.map((scope) => ({
 			key: scope.id,
 			item: scope
 		})),
@@ -61,39 +77,36 @@
 	] as ScopeView[];
 
 	$: {
-		scopeDragType = isContactDragging ? 'contacts' : 'scope';
+		scopeDragType = isContactDragging ? CONTACTS_DRAG_TYPE : SCOPE_DRAG_TYPE;
 	}
 
-	$: {
-		console.log({ scopes });
-	}
-
-	const handleCheckNewScopeName = (value: string) => !scopes.some((item) => item.name === value);
+	const handleCheckNewScopeName = (value: string) =>
+		!scopesVisual.some((item) => item.name === value);
 
 	// #region Изменеине данных
-	const handleScopeUpdated = ({ detail }: { detail: ScopeData }) => {
-		const scopeIndex = scopes.findIndex((item) => item.id === detail.id);
+	const handleScopeUpdated = ({ detail }: { detail: ScopeDataVisual }) => {
+		const scopeIndex = scopesVisual.findIndex((item) => item.id === detail.id);
 		if (scopeIndex !== -1) {
-			scopes[scopeIndex] = detail;
+			scopesVisual[scopeIndex] = detail;
 		} else {
 			console.warn(`no scope fith id: ${detail.id} found`);
 		}
 	};
 
 	const handleCreateScope = (e: { detail: string }) => {
-		scopes.push({
+		scopesVisual.push({
 			id: Date.now().toString(),
 			name: e.detail,
 			members: []
 		});
-		scopes = scopes;
+		scopesVisual = scopesVisual;
 	};
 
 	const handleRemoveScope = (scopeId: string) => {
-		const scopeIndex = scopes.findIndex((scope) => scope.id === scopeId);
+		const scopeIndex = scopesVisual.findIndex((scope) => scope.id === scopeId);
 		if (scopeIndex !== -1) {
-			scopes.splice(scopeIndex, 1);
-			scopes = scopes;
+			scopesVisual.splice(scopeIndex, 1);
+			scopesVisual = scopesVisual;
 		}
 	};
 
@@ -104,14 +117,14 @@
 			channelMembers = channelMembers;
 		}
 
-		scopes.forEach(({ members }) => {
+		scopesVisual.forEach(({ members }) => {
 			const userIndex = members.findIndex((member) => member.id === userId);
 			if (userIndex !== -1) {
 				members.splice(userIndex, 1);
 				members = members;
 			}
 		});
-		scopes = scopes;
+		scopesVisual = scopesVisual;
 	};
 	// #endregion
 </script>
@@ -121,13 +134,18 @@
 	<!-- sidebarHeader -->
 	<div slot="sidebarHeader" class="flex items-center mb-2">
 		<h1 class="grow">Контакты</h1>
-		<Button icon="ri:logout-box-line" />
+		<Button
+			icon="ri:logout-box-line"
+			on:click={() => {
+				goto('/');
+			}}
+		/>
 	</div>
 	<!-- sidebarBody -->
 	<div slot="sidebarBody" class="absolute inset-0 overflow-auto">
 		<DndContactList
 			items={channelMembers}
-			dragType={contactsDragType}
+			dragType={CONTACTS_DRAG_TYPE}
 			on:dragStart={() => {
 				isContactDragging = true;
 			}}
@@ -193,7 +211,7 @@
 					<Card>
 						<h1>Скопы</h1>
 						<div>
-							{#each scopes as scope (scope.id)}
+							{#each scopesVisual as scope (scope.id)}
 								<div>{scope.name}</div>
 							{/each}
 						</div>

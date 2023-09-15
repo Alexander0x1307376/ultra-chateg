@@ -22,9 +22,9 @@ export type ClientToServerEvents = {
 };
 
 export type ServerToClientEvents = {
-	set: (data: Channel[]) => void;
-	remove: (ids: string[]) => void;
-	update: (data: Channel[]) => void;
+	'channels:set': (data: Channel[]) => void;
+	'channels:remove': (ids: string[]) => void;
+	'channels:update': (data: Channel[]) => void;
 };
 
 export type AckResponse<T> = {
@@ -45,6 +45,8 @@ export class ChannelsRemoteStore extends BaseStore<ChannelsState> {
 		this.handleConnectSocket = this.handleConnectSocket.bind(this);
 		this.handleSocket = this.handleSocket.bind(this);
 		this.addChannel = this.addChannel.bind(this);
+		this.upsertChannels = this.upsertChannels.bind(this);
+		this.removeChannels = this.removeChannels.bind(this);
 
 		wsConnection.subscribe(this.handleConnectSocket);
 	}
@@ -75,32 +77,41 @@ export class ChannelsRemoteStore extends BaseStore<ChannelsState> {
 
 	private handleSocket(socket: Socket<ServerToClientEvents, ClientToServerEvents>) {
 		socket.on('connect', () => {
-			setTimeout(() => {
-				socket.emit('channels:subscribe');
-			}, 200);
+			console.log(`[ChannelsRemoteStore]:handleSocket:(connect)`);
+			if (this.subscriptionsCount) {
+				console.log(`[ChannelsRemoteStore]:handleSocket:(connect): connection recovered`);
+				setTimeout(() => {
+					socket.emit('channels:subscribe');
+				}, 200);
+			}
 		});
-		socket.on('set', this.set || []);
-		socket.on('remove', (ids) => {
-			this.update((prevState) => prevState.filter((item) => !ids.includes(item.id)));
-		});
-		socket.on('update', (upsertData) => {
-			this.update((prevState) => {
-				const updatedStore = [...prevState];
-				// проходим по добавляемым данным, сверяемся с имеющимися данными
-				// если id совпадают - заменяем, иначе - пушим в конец
-				upsertData.forEach((upsertItem) => {
-					const existingItemIndex = updatedStore.findIndex(
-						(storeItem) => storeItem.id === upsertItem.id
-					);
 
-					if (existingItemIndex !== -1) {
-						updatedStore[existingItemIndex] = upsertItem;
-					} else {
-						updatedStore.push(upsertItem);
-					}
-				});
-				return updatedStore;
+		socket.on('channels:set', this.set);
+		socket.on('channels:remove', this.removeChannels);
+		socket.on('channels:update', this.upsertChannels);
+	}
+
+	removeChannels(ids: string[]) {
+		this.update((prevState) => prevState.filter((item) => !ids.includes(item.id)));
+	}
+
+	upsertChannels(upsertData: Channel[]) {
+		this.update((prevState) => {
+			const updatedStore = [...prevState];
+			// проходим по добавляемым данным, сверяемся с имеющимися данными
+			// если id совпадают - заменяем, иначе - пушим в конец
+			upsertData.forEach((upsertItem) => {
+				const existingItemIndex = updatedStore.findIndex(
+					(storeItem) => storeItem.id === upsertItem.id
+				);
+
+				if (existingItemIndex !== -1) {
+					updatedStore[existingItemIndex] = upsertItem;
+				} else {
+					updatedStore.push(upsertItem);
+				}
 			});
+			return updatedStore;
 		});
 	}
 
