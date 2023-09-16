@@ -9,6 +9,20 @@
 		name: string;
 		members: UserVisual[];
 	};
+
+	export type ChannelDetailsVisual = {
+		id: string;
+		name: string;
+		members: UserVisual[];
+		scopes: ScopeDataVisual[];
+	};
+
+	const setChannelDetailsVisualMock: ChannelDetailsVisual = {
+		id: '-1',
+		name: 'NONE',
+		members: [],
+		scopes: []
+	};
 </script>
 
 <script lang="ts">
@@ -19,48 +33,44 @@
 	import AddScope from '$lib/components/scopes/AddScope.svelte';
 	import Scope from '$lib/components/scopes/Scope.svelte';
 	import DndContactList from '$lib/components/DndContactList.svelte';
-	import type { EntityWithAva, Scope as ScopeData, User } from '$lib/entities/entities';
+	import type { Channel, EntityWithAva, Scope as ScopeData, User } from '$lib/entities/entities';
 	import { fade, scale } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import type { ScopeTransfer } from '$lib/features/channels/ChannelDetailsRemoteStore';
+	import type {
+		ChannelDetailsRemoteStore,
+		ChannelDetailsTransfer,
+		ScopeTransfer
+	} from '$lib/features/channels/ChannelDetailsRemoteStore';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import {
+		channelDetailsTransferToVisual,
+		channelDetailsVisualToTransfer
+	} from '$lib/features/channels/channelUtils';
 
-	// members ---> membersVisual ---> socketEmit ---> members
-	// scopes ---> scopesVisual ---> socketEmit ---> scopes
+	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
 	export let currentUser: User;
-	export let members: User[];
-	export let scopes: ScopeTransfer[];
+	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
 
-	// представление данных в dnd-системе
-	let scopesVisual: ScopeDataVisual[] = [];
+	// #region channelDetailsRemoteStore ---> channelVisual
+	let channelDetailsVisual: ChannelDetailsVisual = setChannelDetailsVisualMock;
+	$: $channelDetailsRemoteStore && setChannelDetailsVisual();
+	const setChannelDetailsVisual = () => {
+		channelDetailsVisual = $channelDetailsRemoteStore
+			? channelDetailsTransferToVisual($channelDetailsRemoteStore)
+			: setChannelDetailsVisualMock;
+	};
+	// #endregion
 
-	$: channelMembers =
-		(members.map((member) => ({
-			id: member.id.toString(),
-			name: member.name
-		})) as EntityWithAva[]) || [];
-
-	// все члены канала
-	// let channelMembers: EntityWithAva[] = [
-	// 	{ id: '001', name: 'Николай Иванович' },
-	// 	{ id: '002', name: 'КрЕвЕдКо' },
-	// 	{ id: '003', name: 'Pussy Destroyer' },
-	// 	{ id: '004', name: 'Калич' },
-	// 	{ id: '005', name: 'АццкиЙ СоТоНа 8==D' },
-	// 	{ id: '006', name: 'Николай Иванович' },
-	// 	{ id: '007', name: 'Нагибатор228' },
-	// 	{ id: '008', name: 'Pussy Destroyer 666' },
-	// 	{ id: '009', name: 'Ататец' },
-	// 	{ id: '010', name: 'User 004' }
-	// ];
-
+	// #region dnd State
 	const CONTACTS_DRAG_TYPE = 'contacts';
 	const SCOPE_DRAG_TYPE = 'scope';
 	let isContactDragging: boolean = false;
 	let scopeDragType: 'scope' | 'contacts' = 'scope';
+	// #endregion
 
+	// #region scopesView
 	// scopesView и связанная с ним логика нужны для корректной отработки анимации на
 	// элементе формы добавления скопа, который для этого пришлось сделать частью списка
 	type ScopeView = {
@@ -68,64 +78,63 @@
 		item?: ScopeDataVisual;
 	};
 
-	$: scopesView = [
-		...scopesVisual.map((scope) => ({
-			key: scope.id,
-			item: scope
-		})),
-		{ key: 'last' }
-	] as ScopeView[];
+	$: scopesViewAndCreateForm = channelDetailsVisual?.scopes
+		? ([
+				...channelDetailsVisual.scopes.map((scope) => ({
+					key: scope.id,
+					item: scope
+				})),
+				{ key: 'last' }
+		  ] as ScopeView[])
+		: [];
+	// #endregion
 
 	$: {
 		scopeDragType = isContactDragging ? CONTACTS_DRAG_TYPE : SCOPE_DRAG_TYPE;
 	}
 
 	const handleCheckNewScopeName = (value: string) =>
-		!scopesVisual.some((item) => item.name === value);
+		!channelDetailsVisual.scopes.some((item) => item.name === value);
 
 	// #region Изменеине данных
 	const handleScopeUpdated = ({ detail }: { detail: ScopeDataVisual }) => {
-		const scopeIndex = scopesVisual.findIndex((item) => item.id === detail.id);
-		if (scopeIndex !== -1) {
-			scopesVisual[scopeIndex] = detail;
-		} else {
-			console.warn(`no scope fith id: ${detail.id} found`);
-		}
+		channelDetailsRemoteStore.updateOnServer((prev) => {
+			if (!prev) return prev;
+			const scopeIndex = prev.scopes.findIndex((item) => item.id === detail.id);
+			if (scopeIndex !== -1) {
+				prev.scopes[scopeIndex] = {
+					id: detail.id,
+					name: detail.name,
+					members: detail.members.map((member) => Number(member.id))
+				};
+			} else {
+				console.warn(`no scope fith id: ${detail.id} found`);
+			}
+			return prev;
+		});
 	};
 
 	const handleCreateScope = (e: { detail: string }) => {
-		scopesVisual.push({
-			id: Date.now().toString(),
-			name: e.detail,
-			members: []
+		channelDetailsRemoteStore.updateOnServer((prev) => {
+			if (!prev) return prev;
+			const newScope = {
+				id: Date.now().toString(),
+				name: e.detail,
+				members: []
+			};
+			prev.scopes.push(newScope);
+			return { ...prev } as ChannelDetailsTransfer;
 		});
-		scopesVisual = scopesVisual;
 	};
 
 	const handleRemoveScope = (scopeId: string) => {
-		const scopeIndex = scopesVisual.findIndex((scope) => scope.id === scopeId);
-		if (scopeIndex !== -1) {
-			scopesVisual.splice(scopeIndex, 1);
-			scopesVisual = scopesVisual;
-		}
-	};
-
-	const removeUserFromScopes = (userId: string) => {
-		const userIndex = channelMembers.findIndex((member) => member.id === userId);
-		if (userIndex !== -1) {
-			channelMembers.splice(userIndex, 1);
-			channelMembers = channelMembers;
-		}
-
-		scopesVisual.forEach(({ members }) => {
-			const userIndex = members.findIndex((member) => member.id === userId);
-			if (userIndex !== -1) {
-				members.splice(userIndex, 1);
-				members = members;
-			}
+		channelDetailsRemoteStore.updateOnServer((prev) => {
+			if (!prev) return prev;
+			prev.scopes = prev.scopes.filter((scope) => scope.id != scopeId);
+			return prev as ChannelDetailsTransfer;
 		});
-		scopesVisual = scopesVisual;
 	};
+
 	// #endregion
 </script>
 
@@ -144,7 +153,7 @@
 	<!-- sidebarBody -->
 	<div slot="sidebarBody" class="absolute inset-0 overflow-auto">
 		<DndContactList
-			items={channelMembers}
+			items={channelDetailsVisual.members}
 			dragType={CONTACTS_DRAG_TYPE}
 			on:dragStart={() => {
 				isContactDragging = true;
@@ -166,7 +175,7 @@
 		<div>
 			<Card>
 				<div class="w-full flex items-center">
-					<h1 class="grow">Канал "мегаканал"</h1>
+					<h1 class="grow">Канал {channelDetailsVisual.name}</h1>
 					<div>
 						<Button label="Кнопка" icon="ri:add-line" />
 					</div>
@@ -179,7 +188,7 @@
 			<div class="relative grow">
 				<div class="absolute inset-0 overflow-y-auto overflow-x-hidden">
 					<div class="flex flex-col space-y-2 h-full">
-						{#each scopesView as scopeView (scopeView.key)}
+						{#each scopesViewAndCreateForm as scopeView (scopeView.key)}
 							<div animate:flip={{ duration: 250 }} in:fade out:scale|local>
 								{#if scopeView.item}
 									<Scope
@@ -211,7 +220,7 @@
 					<Card>
 						<h1>Скопы</h1>
 						<div>
-							{#each scopesVisual as scope (scope.id)}
+							{#each channelDetailsVisual.scopes as scope (scope.id)}
 								<div>{scope.name}</div>
 							{/each}
 						</div>

@@ -1,6 +1,7 @@
 import type { Socket } from 'socket.io-client';
 import { BaseStore } from '../store/BaseStore';
 import type { SocketData, WebsocketConnection } from '../webSockets/WebsocketConnection';
+import { goto } from '$app/navigation';
 
 export type User = {
 	id: number;
@@ -25,10 +26,11 @@ export type ChannelDetailsTransfer = {
 export type ClientToServerEvents = {
 	'channelDetails:subscribe': (channelId: string) => void;
 	'channelDetails:unsubscribe': () => void;
+	'channelDetails:update': (channel: ChannelDetailsTransfer) => void;
 };
 export type ServerToClientEvents = {
 	'channelDetails:set': (channel: ChannelDetailsTransfer) => void;
-	'channelDetails:remove': (channel: ChannelDetailsTransfer) => void;
+	'channelDetails:remove': (channelId: string) => void;
 	'channelDetails:update': (channel: ChannelDetailsTransfer) => void;
 };
 
@@ -49,8 +51,14 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 		this.subscribe = this.subscribe.bind(this);
 		this.handleConnectSocket = this.handleConnectSocket.bind(this);
 		this.handleSocket = this.handleSocket.bind(this);
+		this.updateOnServer = this.updateOnServer.bind(this);
 
 		wsConnection.subscribe(this.handleConnectSocket);
+	}
+
+	updateOnServer(callback: (channel: ChannelDetailsState) => ChannelDetailsState) {
+		const dataToSend = callback(this._store);
+		if (dataToSend) this._socket?.emit('channelDetails:update', dataToSend);
 	}
 
 	override subscribe(subscription: (value: ChannelDetailsState) => void): () => void {
@@ -66,6 +74,7 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 
 		// если это первый подписчик - сообщаем серверу, что хотим получать обновления
 		if (this.subscriptionsCount === 0) {
+			console.log(`[ChannelDetailsRemoteStore]:subscribe: socket emit`);
 			this._socket?.emit('channelDetails:subscribe', channelId);
 		}
 
@@ -90,12 +99,18 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 		socket.on('connect', () => {
 			if (this.subscriptionsCount && this._channelId) {
 				setTimeout(() => {
-					console.log({ channelId: this._channelId, subsCount: this.subscriptionsCount });
 					socket.emit('channelDetails:subscribe', this._channelId);
 				}, 200);
 			}
 		});
 		socket.on('channelDetails:set', this.set);
-		socket.on('channelDetails:update', this.set);
+		socket.on('channelDetails:update', (data) => {
+			this.set(data);
+		});
+		// если канал был удалён на сервере или не существует по разным причинам
+		socket.on('channelDetails:remove', () => {
+			this.set(undefined);
+			goto('/');
+		});
 	}
 }

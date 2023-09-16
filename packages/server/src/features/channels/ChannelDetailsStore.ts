@@ -136,6 +136,30 @@ export class ChannelDetailsStore {
     return this._channels.get(channelId);
   }
 
+  updateChannel(input: ChannelDetailsTransfer) {
+    const { members, name, ownerId, scopes } = input;
+
+    const channel = this._channels.get(input.id);
+    if (!channel) {
+      console.warn(`[ChannelDetailsStore]:updateChannel: no channel with id: ${input.id}`);
+      return;
+    }
+    channel.name = name;
+    channel.members = new Map(members.map((item) => [item.id, item]));
+    channel.ownerId = ownerId;
+    channel.scopes = new Map(
+      scopes.map((scope) => [
+        scope.id,
+        {
+          id: scope.id,
+          name: scope.name,
+          members: new Set(scope.members),
+        },
+      ]),
+    );
+    this._emitter.emit("channelUpdated", input);
+  }
+
   addChannel(input: CreateChannelInput) {
     const newChannelId = nanoid();
     const newChannel: ChannelDetails = {

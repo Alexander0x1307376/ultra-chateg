@@ -7,10 +7,11 @@ import { channelDataToTransfer } from "./channelUtils";
 export type ClientToServerEvents = {
   "channelDetails:subscribe": (channelId: string) => void;
   "channelDetails:unsubscribe": () => void;
+  "channelDetails:update": (data: ChannelDetailsTransfer) => void;
 };
 export type ServerToClientEvents = {
   "channelDetails:set": (channel: ChannelDetailsTransfer) => void;
-  "channelDetails:remove": (channel: ChannelDetailsTransfer) => void;
+  "channelDetails:remove": (channelId: string) => void;
   "channelDetails:update": (channel: ChannelDetailsTransfer) => void;
 };
 
@@ -49,6 +50,7 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
         console.warn(
           `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:subscribe): no channel with id: ${channelId}`,
         );
+        socket.emit("channelDetails:remove", channelId);
         return;
       }
       // #endregion
@@ -81,6 +83,24 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
         channelId: userData.currentChannel,
         memberId: userData.user.id,
       });
+    });
+    socket.on("channelDetails:update", (data) => {
+      // #region вылидация
+      const channel = this._channelsDetailsStore.get(data.id);
+      if (!channel) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:update): no channel with id: ${data.id}`,
+        );
+        return;
+      }
+      if (channel.ownerId !== userData.user.id) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:update): user ${userData.user.name} isn't an owner of channel with id: ${data.id}`,
+        );
+        return;
+      }
+      // #endregion
+      this._channelsDetailsStore.updateChannel(data);
     });
     socket.on("disconnect", () => {
       if (!userData.currentChannel) return;

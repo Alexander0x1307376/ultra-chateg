@@ -28,7 +28,7 @@ export class WebsocketConnection implements IInitiable, IStore<SocketData> {
 	}
 
 	init() {
-		console.log('[WebsocketSystem]: initialization...');
+		console.log('[WebsocketConnection]: initialization...');
 		const authData = this._authStore.authData;
 		if (authData) {
 			const extraHeaders = { Authorization: `Bearer ${authData.accessToken}` };
@@ -39,21 +39,21 @@ export class WebsocketConnection implements IInitiable, IStore<SocketData> {
 				extraHeaders
 			});
 			socket.on('connect', () => {
-				console.log('[WebsocketSystem]: initialization success. Socket connected');
+				console.log('[WebsocketConnection]: initialization success. Socket connected');
 			});
 
 			socket.on('connect_error', (error: Error) => {
 				if (error.message === 'NOT_AUTHORIZED') {
-					console.warn('[WebsocketSystem]:error: not authorized');
+					console.warn('[WebsocketConnection]:error: not authorized');
 				} else {
-					console.warn('[WebsocketSystem]:error: unhandled error', error.message);
+					console.warn('[WebsocketConnection]:error: unhandled error', error.message);
 				}
 			});
 			socket.connect();
 			this._socket = socket;
 			this.socket.set(socket);
 		} else {
-			console.warn(`[WebsocketSystem]: no auth data. Initialization failed`);
+			console.warn(`[WebsocketConnection]: no auth data. Initialization failed`);
 		}
 	}
 

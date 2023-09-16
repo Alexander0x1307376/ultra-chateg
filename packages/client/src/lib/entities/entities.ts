@@ -15,3 +15,8 @@ export type EntityWithAva = {
 	name: string;
 	avaUrl?: string;
 };
+
+export type Channel = {
+	id: string;
+	name: string;
+};
