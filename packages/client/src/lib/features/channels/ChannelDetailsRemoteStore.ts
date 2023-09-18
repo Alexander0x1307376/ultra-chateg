@@ -27,6 +27,8 @@ export type ClientToServerEvents = {
 	'channelDetails:subscribe': (channelId: string) => void;
 	'channelDetails:unsubscribe': () => void;
 	'channelDetails:update': (channel: ChannelDetailsTransfer) => void;
+	'channelDetails:joinScope': (channelId: string, scopeId: string) => void;
+	'channelDetails:leaveScope': (channelId: string, scopeId: string) => void;
 };
 export type ServerToClientEvents = {
 	'channelDetails:set': (channel: ChannelDetailsTransfer) => void;
@@ -52,8 +54,18 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 		this.handleConnectSocket = this.handleConnectSocket.bind(this);
 		this.handleSocket = this.handleSocket.bind(this);
 		this.updateOnServer = this.updateOnServer.bind(this);
+		this.joinScope = this.joinScope.bind(this);
+		this.leaveScope = this.leaveScope.bind(this);
 
 		wsConnection.subscribe(this.handleConnectSocket);
+	}
+
+	joinScope(scopeId: string) {
+		this._socket?.emit('channelDetails:joinScope', this._channelId, scopeId);
+	}
+
+	leaveScope(scopeId: string) {
+		this._socket?.emit('channelDetails:leaveScope', this._channelId, scopeId);
 	}
 
 	updateOnServer(callback: (channel: ChannelDetailsState) => ChannelDetailsState) {

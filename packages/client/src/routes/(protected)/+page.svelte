@@ -5,7 +5,7 @@
 
 	export let data: PageData;
 	const mockUser: User = {
-		id: 'none',
+		id: -1,
 		name: 'пользователь'
 	};
 

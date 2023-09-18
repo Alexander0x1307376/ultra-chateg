@@ -17,7 +17,7 @@ export class AuthQueryService {
 	}
 
 	private responseToUserData(responseData: AuthResponse): AuthDataStore {
-		const userData: User = { ...responseData.userData, id: responseData.userData.id.toString() };
+		const userData: User = { ...responseData.userData, id: responseData.userData.id };
 		const accessToken = responseData.accessToken;
 		const refreshToken = responseData.refreshToken;
 		return {

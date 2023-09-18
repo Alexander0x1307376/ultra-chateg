@@ -5,5 +5,6 @@
 	initializeStores();
 </script>
 
+<svelte:body on:contextmenu|preventDefault />
 <Modal components={modalComponentRegistry} />
 <slot />

@@ -1,6 +1,10 @@
 import type { User } from '$lib/entities/entities';
 import type { ChannelDetailsVisual, UserVisual } from '$lib/pages/Channel.svelte';
-import type { ChannelDetailsTransfer, ScopeTransfer } from './ChannelDetailsRemoteStore';
+import type {
+	ChannelDetailsState,
+	ChannelDetailsTransfer,
+	ScopeTransfer
+} from './ChannelDetailsRemoteStore';
 
 export const channelDetailsTransferToVisual = (
 	transfer: ChannelDetailsTransfer
@@ -54,4 +58,15 @@ export const channelDetailsVisualToTransfer = (
 		members: visual.members.map(mapUser),
 		scopes: scopesTransfer
 	};
+};
+
+export const isUserInScope = (
+	userId: number,
+	scopeId: string,
+	channelDetailsState: ChannelDetailsState
+): boolean => {
+	if (!channelDetailsState) return false;
+	const scope = channelDetailsState.scopes.find((item) => scopeId === item.id);
+	if (!scope) return false;
+	return scope.members.some((id) => id === userId);
 };

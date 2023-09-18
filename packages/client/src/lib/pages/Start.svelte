@@ -14,47 +14,11 @@
 	export let channelsRemoteStore: ChannelsRemoteStore;
 	$: channels = $channelsRemoteStore.map((item) => ({ ...item, url: item.id }));
 
-	// const channels = [
-	// 	{
-	// 		id: '222',
-	// 		name: 'Atata tretatex Abraham Inn Atata',
-	// 		url: '222'
-	// 	},
-	// 	{
-	// 		id: '333',
-	// 		name: 'Amasing Channel',
-	// 		url: '333'
-	// 	},
-	// 	{
-	// 		id: '444',
-	// 		name: 'мегаканал',
-	// 		url: '224442'
-	// 	},
-	// 	{
-	// 		id: '555',
-	// 		name: 'Десантно-штурмовой батальон "Фасолинка"',
-	// 		url: '555'
-	// 	},
-	// 	{
-	// 		id: '666',
-	// 		name: 'АццкиЙ СоТоНа 8==D',
-	// 		url: '666'
-	// 	}
-	// ];
-
 	const modal: ModalSettings = {
 		type: 'component',
 		component: 'CreateChannelModal',
 		backdropClasses: '!overflow-hidden',
-		meta: { addChannel: channelsRemoteStore.addChannel },
-		response: async (newChannelName: string) => {
-			// if (!newChannelName) return;
-			// try {
-			// 	await channelsRemoteStore.addChannel({ name: newChannelName });
-			// } catch (e) {
-			// 	console.log('ERR', e);
-			// }
-		}
+		meta: { addChannel: channelsRemoteStore.addChannel }
 	};
 	const handleClick = () => {
 		modalStore.trigger(modal);

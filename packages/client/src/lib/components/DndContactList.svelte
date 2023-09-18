@@ -5,12 +5,21 @@
 	import { createEventDispatcher } from 'svelte';
 	import ContactDraggableItem from './ContactDraggableItem.svelte';
 
-	const dispatch = createEventDispatcher<{ dragStart: void; dragEnd: void }>();
+	const dispatch = createEventDispatcher<{
+		dragStart: void;
+		dragEnd: void;
+		contextMenuClick: {
+			event: MouseEvent & { currentTarget: EventTarget & HTMLDivElement };
+			itemId: string;
+		};
+	}>();
 
 	const FLIP_DURATION_MS = 300;
 
 	export let items: EntityWithAva[];
+	export let ownerId: string = '';
 	export let dragType: string;
+	export let isDraggable = true;
 
 	let itemsVisual: EntityWithAva[] = [];
 	$: items && setItems();
@@ -82,6 +91,7 @@
 <div
 	class="grid grid-cols-1 gap-2"
 	use:dndzone={{
+		dragDisabled: !isDraggable,
 		items: itemsVisual,
 		flipDurationMs: FLIP_DURATION_MS,
 		type: dragType,
@@ -95,8 +105,18 @@
 	}}
 >
 	{#each itemsVisual as item (item.id)}
-		<div animate:flip={{ duration: FLIP_DURATION_MS }}>
-			<ContactDraggableItem {item} />
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			animate:flip={{ duration: FLIP_DURATION_MS }}
+			on:contextmenu={(e) => {
+				dispatch('contextMenuClick', { event: e, itemId: item.id });
+			}}
+		>
+			<ContactDraggableItem
+				{isDraggable}
+				{item}
+				icon={ownerId === item.id ? 'ri:vip-crown-line' : ''}
+			/>
 		</div>
 	{/each}
 </div>

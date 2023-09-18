@@ -8,6 +8,8 @@ export type ClientToServerEvents = {
   "channelDetails:subscribe": (channelId: string) => void;
   "channelDetails:unsubscribe": () => void;
   "channelDetails:update": (data: ChannelDetailsTransfer) => void;
+  "channelDetails:joinScope": (channelId: string, scopeId: string) => void;
+  "channelDetails:leaveScope": (channelId: string, scopeId: string) => void;
 };
 export type ServerToClientEvents = {
   "channelDetails:set": (channel: ChannelDetailsTransfer) => void;
@@ -101,6 +103,66 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
       }
       // #endregion
       this._channelsDetailsStore.updateChannel(data);
+    });
+    socket.on("channelDetails:joinScope", (channelId: string, scopeId: string) => {
+      // #region Валидация
+      const channel = this._channelsDetailsStore.get(channelId);
+      if (!channel) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:joinScope): no channel with id: ${channelId}`,
+        );
+        return;
+      }
+      // скоп должен быть в канале
+      if (!channel.scopes.has(scopeId)) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:joinScope): no scope ${scopeId} in channel ${channelId}`,
+        );
+        return;
+      }
+      // юзер должен быть в канале
+      if (userData.currentChannel !== channelId) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:joinScope): user ${userData.user.name} isn't in the channel with id: ${channelId}`,
+        );
+        return;
+      }
+      // #endregion
+      this._channelsDetailsStore.addMemberInScope({
+        channelId,
+        scopeId,
+        memberId: userData.user.id,
+      });
+    });
+    socket.on("channelDetails:leaveScope", (channelId: string, scopeId: string) => {
+      // #region Валидация
+      const channel = this._channelsDetailsStore.get(channelId);
+      if (!channel) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:leaveScope): no channel with id: ${channelId}`,
+        );
+        return;
+      }
+      // скоп должен быть в канале
+      if (!channel.scopes.has(scopeId)) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:leaveScope): no scope ${scopeId} in channel ${channelId}`,
+        );
+        return;
+      }
+      // юзер должен быть в канале
+      if (userData.currentChannel !== channelId) {
+        console.warn(
+          `[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:leaveScope): user ${userData.user.name} isn't in the channel with id: ${channelId}`,
+        );
+        return;
+      }
+      // #endregion
+      this._channelsDetailsStore.removeMemberFromScope({
+        memberId: userData.user.id,
+        channelId,
+        scopeId,
+      });
     });
     socket.on("disconnect", () => {
       if (!userData.currentChannel) return;

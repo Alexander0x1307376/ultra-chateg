@@ -33,25 +33,26 @@
 	import AddScope from '$lib/components/scopes/AddScope.svelte';
 	import Scope from '$lib/components/scopes/Scope.svelte';
 	import DndContactList from '$lib/components/DndContactList.svelte';
-	import type { Channel, EntityWithAva, Scope as ScopeData, User } from '$lib/entities/entities';
+	import type { User } from '$lib/entities/entities';
 	import { fade, scale } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import type {
 		ChannelDetailsRemoteStore,
-		ChannelDetailsTransfer,
-		ScopeTransfer
+		ChannelDetailsTransfer
 	} from '$lib/features/channels/ChannelDetailsRemoteStore';
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
 		channelDetailsTransferToVisual,
-		channelDetailsVisualToTransfer
+		isUserInScope
 	} from '$lib/features/channels/channelUtils';
+	import { clickOutside } from '$lib/components/contextMenus/clickOutside';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
 	export let currentUser: User;
 	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
+
+	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
 	// #region channelDetailsRemoteStore ---> channelVisual
 	let channelDetailsVisual: ChannelDetailsVisual = setChannelDetailsVisualMock;
@@ -68,6 +69,9 @@
 	const SCOPE_DRAG_TYPE = 'scope';
 	let isContactDragging: boolean = false;
 	let scopeDragType: 'scope' | 'contacts' = 'scope';
+	$: {
+		scopeDragType = isContactDragging ? CONTACTS_DRAG_TYPE : SCOPE_DRAG_TYPE;
+	}
 	// #endregion
 
 	// #region scopesView
@@ -89,26 +93,26 @@
 		: [];
 	// #endregion
 
-	$: {
-		scopeDragType = isContactDragging ? CONTACTS_DRAG_TYPE : SCOPE_DRAG_TYPE;
-	}
+	// #region вспомогательные функции
 
 	const handleCheckNewScopeName = (value: string) =>
 		!channelDetailsVisual.scopes.some((item) => item.name === value);
 
+	// #endRegion
+
 	// #region Изменеине данных
-	const handleScopeUpdated = ({ detail }: { detail: ScopeDataVisual }) => {
+	const handleScopeUpdated = (scope: ScopeDataVisual) => {
 		channelDetailsRemoteStore.updateOnServer((prev) => {
 			if (!prev) return prev;
-			const scopeIndex = prev.scopes.findIndex((item) => item.id === detail.id);
+			const scopeIndex = prev.scopes.findIndex((item) => item.id === scope.id);
 			if (scopeIndex !== -1) {
 				prev.scopes[scopeIndex] = {
-					id: detail.id,
-					name: detail.name,
-					members: detail.members.map((member) => Number(member.id))
+					id: scope.id,
+					name: scope.name,
+					members: scope.members.map((member) => Number(member.id))
 				};
 			} else {
-				console.warn(`no scope fith id: ${detail.id} found`);
+				console.warn(`no scope fith id: ${scope.id} found`);
 			}
 			return prev;
 		});
@@ -135,8 +139,51 @@
 		});
 	};
 
+	const handleJoinScope = (scopeItemId: string) => {
+		channelDetailsRemoteStore.joinScope(scopeItemId);
+	};
+	const handleLeaveScope = (scopeItemId: string) => {
+		channelDetailsRemoteStore.leaveScope(scopeItemId);
+	};
+
 	// #endregion
+
+	// #region Контекстные меню
+	type Position = { x: number; y: number };
+	let contactsContextMenuPosition: Position | undefined;
+	let contextMenuElement: HTMLDivElement;
+	const handleContextMenu = (position: Position | undefined) => {
+		contactsContextMenuPosition = position;
+	};
+	const handleClickOutside = () => {
+		contactsContextMenuPosition = undefined;
+	};
+	// #renregion
 </script>
+
+{#if contactsContextMenuPosition}
+	<div
+		use:clickOutside
+		on:clickOutside={handleClickOutside}
+		bind:this={contextMenuElement}
+		style="top: {contactsContextMenuPosition.y}px; left: {contactsContextMenuPosition.x}px;"
+		class="absolute z-10 w-60 bg-surface-500 shadow-md shadow-black/50 rounded-md py-2"
+	>
+		<ul class="flex flex-col">
+			<li>
+				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left">Профиль</button>
+			</li>
+			<li>
+				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left">Переместить</button>
+			</li>
+			<li>
+				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left"
+					>Сделать владельцем канала</button
+				>
+			</li>
+		</ul>
+	</div>
+{/if}
 
 <!-- route /[channelId] - страница конкретного канала -->
 <MainLayout>
@@ -153,6 +200,8 @@
 	<!-- sidebarBody -->
 	<div slot="sidebarBody" class="absolute inset-0 overflow-auto">
 		<DndContactList
+			isDraggable={isCurrentUserOwner}
+			ownerId={$channelDetailsRemoteStore?.ownerId.toString()}
 			items={channelDetailsVisual.members}
 			dragType={CONTACTS_DRAG_TYPE}
 			on:dragStart={() => {
@@ -160,6 +209,12 @@
 			}}
 			on:dragEnd={() => {
 				isContactDragging = false;
+			}}
+			on:contextMenuClick={(e) => {
+				handleContextMenu({
+					x: e.detail.event.x,
+					y: e.detail.event.y
+				});
 			}}
 		/>
 	</div>
@@ -192,14 +247,28 @@
 							<div animate:flip={{ duration: 250 }} in:fade out:scale|local>
 								{#if scopeView.item}
 									<Scope
+										isLeaveButtonVisible={isUserInScope(
+											currentUser.id,
+											scopeView.item.id,
+											$channelDetailsRemoteStore
+										)}
+										isEditControlsEnabled={isCurrentUserOwner}
 										scopeData={scopeView.item}
 										dragType={scopeDragType}
-										on:scopeUpdated={handleScopeUpdated}
+										on:joinClick={() => {
+											scopeView.item?.id && handleJoinScope(scopeView.item.id);
+										}}
+										on:leaveClick={() => {
+											scopeView.item?.id && handleLeaveScope(scopeView.item.id);
+										}}
+										on:scopeUpdated={(e) => {
+											handleScopeUpdated(e.detail);
+										}}
 										on:removeScope={() => {
 											scopeView.item && handleRemoveScope(scopeView.item.id);
 										}}
 									/>
-								{:else}
+								{:else if isCurrentUserOwner}
 									<div class="h-48 mb-5">
 										<AddScope
 											checkName={handleCheckNewScopeName}
