@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import Button from '../Button.svelte';
+	import Button, { type ButtonType } from '../Button.svelte';
 	import { getRandomGroupName } from '$lib/utils/randomGroupNames';
 
 	const dispatch = createEventDispatcher<{ addScope: string }>();
@@ -35,7 +35,7 @@
 
 	type ButtonStateType = 'default' | 'error';
 	let buttonState: ButtonStateType = 'default';
-	const buttonStateStyle: Record<ButtonStateType, { label: string; type: string }> = {
+	const buttonStateStyle: Record<ButtonStateType, { label: string; type: ButtonType }> = {
 		default: {
 			label: 'Добавить',
 			type: 'default'
