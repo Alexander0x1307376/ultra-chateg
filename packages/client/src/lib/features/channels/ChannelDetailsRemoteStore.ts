@@ -84,8 +84,8 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 
 		console.log(`[ChannelDetailsRemoteStore]:subscribe`, this._store);
 
-		// если это первый подписчик - сообщаем серверу, что хотим получать обновления
-		if (this.subscriptionsCount === 0) {
+		// если это первый подписчик и channelId установлен - сообщаем серверу, что хотим получать обновления
+		if (this.subscriptionsCount === 0 && channelId) {
 			console.log(`[ChannelDetailsRemoteStore]:subscribe: socket emit`);
 			this._socket?.emit('channelDetails:subscribe', channelId);
 		}

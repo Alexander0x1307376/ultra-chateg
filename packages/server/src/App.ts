@@ -21,6 +21,7 @@ import { ChannelsRemoteStore } from "./features/channels/ChannelsRemoteStore";
 import { Server as SocketServer } from "socket.io";
 import { ChannelDetailsRemoteStore } from "./features/channels/ChannelDetailsRemoteStore";
 import { ChannelDetailsStore } from "./features/channels/ChannelDetailsStore";
+import { PeerToPeerSystem } from "./features/p2p/PeerToPeerSystem";
 
 @injectable()
 export class App {
@@ -36,6 +37,7 @@ export class App {
   _pageRealtimeService: PageRealtimeService;
   _channelsRemoteStore: ChannelsRemoteStore;
   _channelDetailsRemoteStore: ChannelDetailsRemoteStore;
+  _peerToPeerSystem: PeerToPeerSystem;
 
   constructor(
     @inject(TYPES.Logger) private logger: ILogger,
@@ -69,11 +71,20 @@ export class App {
 
     const channelDetailsStore = new ChannelDetailsStore(this._channelsRemoteStore, usersRealtimeService);
     this._channelDetailsRemoteStore = new ChannelDetailsRemoteStore(this._websocketServer, channelDetailsStore);
+
+    const peerToPeerSystem = new PeerToPeerSystem(
+      this._websocketServer,
+      channelDetailsStore,
+      usersRealtimeService,
+      this._channelDetailsRemoteStore,
+    );
+    this._peerToPeerSystem = peerToPeerSystem;
   }
 
   private handleRealtimeSystems() {
     this._websocketSystem.addHandler(this._channelsRemoteStore.socketHandler);
     this._websocketSystem.addHandler(this._channelDetailsRemoteStore.socketHandler);
+    this._websocketSystem.addHandler(this._peerToPeerSystem.socketHandler);
   }
 
   private useRoutes() {

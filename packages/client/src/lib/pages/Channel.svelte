@@ -46,11 +46,16 @@
 		isUserInScope
 	} from '$lib/features/channels/channelUtils';
 	import { clickOutside } from '$lib/components/contextMenus/clickOutside';
+	import type { FullPeerData, PeerConnections } from '$lib/features/p2p/PeerConnections';
+	import type { StreamService } from '$lib/features/stream/StreamService';
+	import { onMount } from 'svelte';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
 	export let currentUser: User;
 	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
+	export let peerConnections: PeerConnections;
+	export let streamService: StreamService;
 
 	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
@@ -98,7 +103,7 @@
 	const handleCheckNewScopeName = (value: string) =>
 		!channelDetailsVisual.scopes.some((item) => item.name === value);
 
-	// #endRegion
+	// #endregion
 
 	// #region Изменеине данных
 	const handleScopeUpdated = (scope: ScopeDataVisual) => {
@@ -158,8 +163,39 @@
 	const handleClickOutside = () => {
 		contactsContextMenuPosition = undefined;
 	};
-	// #renregion
+	// #endregion
+
+	const attachStream = (node: HTMLVideoElement, stream: MediaStream) => {
+		node.srcObject = stream;
+		return {
+			update: (stream: MediaStream) => {
+				node.srcObject = stream;
+			}
+		};
+	};
+
+	onMount(async () => {
+		thisStream = await streamService.getMediaStream();
+	});
+	let thisStream: MediaStream;
 </script>
+
+<div id="myElement">
+	<div>LOCAL</div>
+	<video class="h-24" use:attachStream={thisStream} autoplay muted>
+		<track kind="captions" />
+	</video>
+</div>
+{#each $peerConnections as [peerId, peerData], index (peerId)}
+	<div class="flex">
+		<div class="bg-slate-800">
+			<div>{peerData.peerData.userId}</div>
+			<video class="h-24" use:attachStream={peerData.streams[0]} autoplay>
+				<track kind="captions" />
+			</video>
+		</div>
+	</div>
+{/each}
 
 {#if contactsContextMenuPosition}
 	<div

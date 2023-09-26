@@ -9,9 +9,9 @@
 		name: 'пользователь'
 	};
 
-	const { authStore, channelDetailsRemoteStore } = data;
+	const { authStore, channelDetailsRemoteStore, peerConnections, streamService } = data;
 	$: currentUser = $authStore?.userData ? $authStore?.userData : mockUser;
 </script>
 
 <!-- route /[channelId] -->
-<Channel {currentUser} {channelDetailsRemoteStore} />
+<Channel {currentUser} {channelDetailsRemoteStore} {peerConnections} {streamService} />

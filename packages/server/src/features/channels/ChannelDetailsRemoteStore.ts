@@ -3,6 +3,7 @@ import { UserData } from "../users/userTypes";
 import { ISocketHandler } from "../webSockets/ISocketHandler";
 import type { ChannelDetails, ChannelDetailsStore, ChannelDetailsTransfer } from "./ChannelDetailsStore";
 import { channelDataToTransfer } from "./channelUtils";
+import { EventEmitter } from "../eventEmitter/EventEmitter";
 
 export type ClientToServerEvents = {
   "channelDetails:subscribe": (channelId: string) => void;
@@ -17,6 +18,23 @@ export type ServerToClientEvents = {
   "channelDetails:update": (channel: ChannelDetailsTransfer) => void;
 };
 
+export type MemberJoinedData = {
+  channel: ChannelDetails;
+  userData: UserData;
+  chatRoom: string;
+};
+
+export type MemberLeftData = {
+  channelId: string;
+  userData: UserData;
+  chatRoom: string;
+};
+
+export type RemoteStoreEvents = {
+  memberJoined: (socket: Socket, data: MemberJoinedData) => void;
+  memberLeft: (socket: Socket, data: MemberLeftData) => void;
+};
+
 // данные конкретного канала
 // предполагается, что клиент одновременно может отслеживать данные только одного канала
 export class ChannelDetailsRemoteStore implements ISocketHandler {
@@ -24,21 +42,29 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
 
   private _socketServer: Server<ClientToServerEvents, ServerToClientEvents>;
   private _channelsDetailsStore: ChannelDetailsStore;
+  private _emitter: EventEmitter<RemoteStoreEvents>;
+  get emitter() {
+    return this._emitter;
+  }
 
   constructor(socketServer: Server, channelsDetailsStore: ChannelDetailsStore) {
     this._socketServer = socketServer;
     this._channelsDetailsStore = channelsDetailsStore;
+    this._emitter = new EventEmitter();
 
     this.socketHandler = this.socketHandler.bind(this);
     this.handleStoreEvents = this.handleStoreEvents.bind(this);
     this.getChannelRoomName = this.getChannelRoomName.bind(this);
     this.leaveAllChatRooms = this.leaveAllChatRooms.bind(this);
+    this.removeMember = this.removeMember.bind(this);
 
     this.handleStoreEvents();
   }
 
   socketHandler(socket: Socket<ClientToServerEvents, ServerToClientEvents>, userData: UserData) {
     socket.on("channelDetails:subscribe", (channelId) => {
+      const oldCurrentChannel = userData.currentChannel;
+
       //#region Валидация
       if (!channelId) {
         console.warn(
@@ -68,23 +94,28 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
       const chatRoom = this.getChannelRoomName(channelId);
       socket.join(chatRoom);
       console.log(`user "${userData.user.name}" joined "${chatRoom}"`);
-      socket.emit("channelDetails:set", channelDataToTransfer(channel));
+      if (oldCurrentChannel !== channelId) {
+        socket.emit("channelDetails:set", channelDataToTransfer(channel));
+        this._emitter.emit("memberJoined", socket, {
+          channel,
+          userData,
+          chatRoom,
+        });
+      }
     });
     //
     socket.on("channelDetails:unsubscribe", () => {
+      const currentChannel = userData.currentChannel;
       // #region вылидация
-      if (!userData.currentChannel) {
+      if (!currentChannel) {
         console.warn(`[ChannelDetailsRemoteStore]:socketHandler:(channelDetails:unsubscribe): no user in any channel`);
         return;
       }
       // #endregion
 
-      console.log(`user "${userData.user.name}" left "${userData.currentChannel}"`);
+      console.log(`user "${userData.user.name}" left "${currentChannel}"`);
       this.leaveAllChatRooms(socket);
-      this._channelsDetailsStore.removeMember({
-        channelId: userData.currentChannel,
-        memberId: userData.user.id,
-      });
+      this.removeMember(socket, userData);
     });
     socket.on("channelDetails:update", (data) => {
       // #region вылидация
@@ -166,10 +197,22 @@ export class ChannelDetailsRemoteStore implements ISocketHandler {
     });
     socket.on("disconnect", () => {
       if (!userData.currentChannel) return;
-      this._channelsDetailsStore.removeMember({
-        channelId: userData.currentChannel,
-        memberId: userData.user.id,
-      });
+      this.removeMember(socket, userData);
+    });
+  }
+
+  private removeMember(socket: Socket, userData: UserData) {
+    const currentChannel = userData.currentChannel;
+    userData.currentChannel = undefined;
+
+    this._channelsDetailsStore.removeMember({
+      channelId: currentChannel,
+      memberId: userData.user.id,
+    });
+    this._emitter.emit("memberLeft", socket, {
+      channelId: currentChannel,
+      userData,
+      chatRoom: this.getChannelRoomName(currentChannel),
     });
   }
 

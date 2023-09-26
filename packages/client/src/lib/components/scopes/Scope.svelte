@@ -22,10 +22,6 @@
 	export let isEditControlsEnabled = true;
 	export let isLeaveButtonVisible = false;
 
-	$: {
-		console.log({ isLeaveButtonVisible });
-	}
-
 	const dispatch = createEventDispatcher<{
 		scopeUpdated: ScopeDataVisual;
 		removeScope: void;
@@ -63,7 +59,6 @@
 		}
 		isEditableHeader = false;
 		preservedName = '';
-		console.log('SAVE', name);
 		scopeData.name = name;
 		dispatch('scopeUpdated', scopeData);
 	};

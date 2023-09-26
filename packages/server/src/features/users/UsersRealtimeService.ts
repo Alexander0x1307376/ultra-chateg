@@ -7,6 +7,10 @@ import type { UserData, UserTransfer, UsersRealtimeEvents } from "./userTypes";
  */
 @injectable()
 export class UsersRealtimeService {
+  get usersStore() {
+    return this.store;
+  }
+
   constructor(
     private store: Map<number, UserData>,
     public emitter: EventEmitter<UsersRealtimeEvents>,

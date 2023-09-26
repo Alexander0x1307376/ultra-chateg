@@ -3,7 +3,7 @@ export const prerender = false;
 
 export const load: PageLoad = async ({ params, parent }) => {
 	const { core } = await parent();
-	const { authStore, channelDetailsRemoteStore } = core;
+	const { authStore, channelDetailsRemoteStore, peerConnections, streamService } = core;
 	const { channelId } = params;
 
 	channelDetailsRemoteStore.channelId = channelId;
@@ -11,6 +11,8 @@ export const load: PageLoad = async ({ params, parent }) => {
 	return {
 		authStore,
 		channelId,
-		channelDetailsRemoteStore
+		channelDetailsRemoteStore,
+		peerConnections,
+		streamService
 	};
 };

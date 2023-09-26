@@ -2769,6 +2769,7 @@ __metadata:
     eslint: ^8.28.0
     eslint-config-prettier: ^8.5.0
     eslint-plugin-svelte: ^2.30.0
+    freeice: ^2.2.2
     lodash: ^4.17.21
     postcss: ^8.4.24
     postcss-load-config: ^4.0.1
@@ -3900,6 +3901,15 @@ __metadata:
   version: 4.3.4
   resolution: "fraction.js@npm:4.3.4"
   checksum: 26fdecf114e3b693c760d3b2d5447f8ba9e815991ca7c7cdb930156780793b87f10936979a890b389676d960d7cd026273da9a44a6e20c12e3c4fd282a026ed3
+  languageName: node
+  linkType: hard
+
+"freeice@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "freeice@npm:2.2.2"
+  dependencies:
+    normalice: ^1.0.0
+  checksum: 4645cb6efcdc3a743600f015bfabd91657e04e065f4888be2ad7218341c982bd0537cbf87edeac691177073802d1562e3d48e7d2541b5078f97fd3e07fdaefdf
   languageName: node
   linkType: hard
 
@@ -5848,6 +5858,13 @@ __metadata:
   bin:
     nopt: bin/nopt.js
   checksum: 82149371f8be0c4b9ec2f863cc6509a7fd0fa729929c009f3a58e4eb0c9e4cae9920e8f1f8eb46e7d032fec8fb01bede7f0f41a67eb3553b7b8e14fa53de1dac
+  languageName: node
+  linkType: hard
+
+"normalice@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "normalice@npm:1.0.1"
+  checksum: 1ce4699865e3a108180591c14940c60355eb963aaebb3baa836892f6c0c2f01d53811d130c699da92855a2b0083e0424c46a809b5fc184a6b70a887e6d0ab397
   languageName: node
   linkType: hard
 

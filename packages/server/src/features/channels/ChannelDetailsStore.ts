@@ -3,6 +3,7 @@ import { EventEmitter } from "../eventEmitter/EventEmitter";
 import { channelDataToTransfer } from "./channelUtils";
 import { ChannelsRemoteStore, ChannelsRemoteStoreEvents } from "./ChannelsRemoteStore";
 import { UsersRealtimeService } from "../users/UsersRealtimeService";
+import { UserTransfer } from "../users/userTypes";
 
 export type User = {
   id: number;
@@ -71,7 +72,7 @@ export type ChannelDetailsTransfer = {
   id: string;
   name: string;
   ownerId: number;
-  members: User[];
+  members: UserTransfer[];
   scopes: ScopeTransfer[];
 };
 

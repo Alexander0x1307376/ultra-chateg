@@ -4,22 +4,28 @@ import { ILogger } from "../logger/ILogger";
 import { AuthService } from "../auth/AuthService";
 import { UsersService } from "../users/UsersService";
 import { createServer, Server as HttpServer } from "http";
-import { UserData, UserTransfer } from "../users/userTypes";
+import type { UserData, UserTransfer } from "../users/userTypes";
 import { UsersRealtimeService } from "../users/UsersRealtimeService";
 import { ExtendedError } from "socket.io/dist/namespace";
 import { getTokenFromHeader } from "../../utils/getTokenFromHeader";
 import { NOT_AUTHORIZED } from "./webSocketErrorMessages";
+import { EventEmitter } from "../eventEmitter/EventEmitter";
 
 export type SocketHandler = (socket: Socket, user: UserData) => void;
 
-export type ClientToServerEvents = {
-  //
+export type WebsocketSystemEvents = {
+  socketConnected: (socket: Socket, userData: UserData) => Promise<void> | void;
+  socketDisonnected: (socket: Socket, userData: UserData) => Promise<void> | void;
 };
 
 export class WebsocketSystem {
   private _wsServer: HttpServer;
   private _socketServer: SocketServer; //<ClientToServerEvents, ServerToClientEvents>;
   private _webSocketHandlers: SocketHandler[];
+  private _webSocketEventEmitter: EventEmitter<WebsocketSystemEvents>;
+  get emitter() {
+    return this._webSocketEventEmitter;
+  }
 
   get socketServer() {
     return this._socketServer;
@@ -31,12 +37,12 @@ export class WebsocketSystem {
     private authService: AuthService,
     private usersSerivce: UsersService,
     private usersRealtimeService: UsersRealtimeService,
-
     private logger: ILogger,
   ) {
     this._wsServer = createServer(app);
     this._socketServer = new SocketServer(this._wsServer, options);
     this._webSocketHandlers = [];
+    this._webSocketEventEmitter = new EventEmitter();
 
     this.init = this.init.bind(this);
     this.listen = this.listen.bind(this);
@@ -57,13 +63,16 @@ export class WebsocketSystem {
         // const user: UserTransfer = await this.usersSerivce.getUserById(socket.handshake.auth.id);
         const user: UserTransfer = await this.usersSerivce.getUserById(parseInt(socket.handshake.auth.id));
         const currentUserOnline = this.usersRealtimeService.addUser(socket.id, user);
+
         this.logger.log(`[WebSocketSystem]: user ${user.name} id: ${user.id} connected`);
 
+        this._webSocketEventEmitter.emit("socketConnected", socket, currentUserOnline);
         this._webSocketHandlers.forEach((handler) => {
           handler(socket, currentUserOnline);
         });
 
         socket.on("disconnect", () => {
+          this._webSocketEventEmitter.emit("socketDisonnected", socket, currentUserOnline);
           this.usersRealtimeService.removeUser(user.id);
           this.logger.log(`[WebSocketSystem]: user ${user.name} id: ${user.id} disconnected`);
         });

@@ -16,7 +16,7 @@
 	<div>
 		<Ava width="w-8" label={item.name} src={item.avaUrl} />
 	</div>
-	<span class="{!icon ? 'grow' : ''} truncate pr-1">{item.name}</span>
+	<span class="{!icon ? 'grow' : ''} truncate pr-1">{item.id}: {item.name}</span>
 
 	{#if icon}
 		<span class="grow">
