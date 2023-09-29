@@ -46,16 +46,13 @@
 		isUserInScope
 	} from '$lib/features/channels/channelUtils';
 	import { clickOutside } from '$lib/components/contextMenus/clickOutside';
-	import type { FullPeerData, PeerConnections } from '$lib/features/p2p/PeerConnections';
-	import type { StreamService } from '$lib/features/stream/StreamService';
-	import { onMount } from 'svelte';
+	import type { PeerConnections } from '$lib/features/p2p/PeerConnections';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
 	export let currentUser: User;
 	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
 	export let peerConnections: PeerConnections;
-	export let streamService: StreamService;
 
 	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
@@ -156,7 +153,6 @@
 	// #region Контекстные меню
 	type Position = { x: number; y: number };
 	let contactsContextMenuPosition: Position | undefined;
-	let contextMenuElement: HTMLDivElement;
 	const handleContextMenu = (position: Position | undefined) => {
 		contactsContextMenuPosition = position;
 	};
@@ -165,43 +161,24 @@
 	};
 	// #endregion
 
-	const attachStream = (node: HTMLVideoElement, stream: MediaStream) => {
+	const attachStream = (node: HTMLVideoElement | HTMLAudioElement, stream: MediaStream) => {
 		node.srcObject = stream;
 		return {
-			update: (stream: MediaStream) => {
-				node.srcObject = stream;
+			update: (newStream: MediaStream) => {
+				node.srcObject = newStream;
 			}
 		};
 	};
-
-	onMount(async () => {
-		thisStream = await streamService.getMediaStream();
-	});
-	let thisStream: MediaStream;
 </script>
 
-<div id="myElement">
-	<div>LOCAL</div>
-	<video class="h-24" use:attachStream={thisStream} autoplay muted>
-		<track kind="captions" />
-	</video>
-</div>
-{#each $peerConnections as [peerId, peerData], index (peerId)}
-	<div class="flex">
-		<div class="bg-slate-800">
-			<div>{peerData.peerData.userId}</div>
-			<video class="h-24" use:attachStream={peerData.streams[0]} autoplay>
-				<track kind="captions" />
-			</video>
-		</div>
-	</div>
+{#each $peerConnections as [peerId, peerData] (peerId)}
+	<audio use:attachStream={peerData.streams[0]} autoplay />
 {/each}
 
 {#if contactsContextMenuPosition}
 	<div
 		use:clickOutside
 		on:clickOutside={handleClickOutside}
-		bind:this={contextMenuElement}
 		style="top: {contactsContextMenuPosition.y}px; left: {contactsContextMenuPosition.x}px;"
 		class="absolute z-10 w-60 bg-surface-500 shadow-md shadow-black/50 rounded-md py-2"
 	>

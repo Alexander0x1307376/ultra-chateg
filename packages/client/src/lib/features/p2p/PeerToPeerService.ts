@@ -77,7 +77,6 @@ export class PeerToPeerService {
 			};
 
 			const handleTrack = (event: RTCTrackEvent) => {
-				console.log('handleTrack-handleTrack-handleTrack', event.streams[0].getTracks().length);
 				this._trackCount++;
 				if (this._trackCount === 2) {
 					this._trackCount = 0;
@@ -116,13 +115,12 @@ export class PeerToPeerService {
 
 			const offer = sdpData.sessionDescription;
 			const remoteSessionDescription = new RTCSessionDescription(offer);
-			connection.setRemoteDescription(remoteSessionDescription);
+			await connection.setRemoteDescription(remoteSessionDescription);
 
 			if (offer.type !== 'offer') return;
 
 			const answer = await connection.createAnswer();
 			await connection.setLocalDescription(answer);
-			console.log('SET_LOCAL_DESC:ANSWER', { peerId: peerData.peerData.peerId });
 
 			socket.emit('relaySDP', {
 				channelId: sdpData.channelId,
@@ -131,7 +129,13 @@ export class PeerToPeerService {
 				sessionDescription: answer
 			});
 		});
+		socket.on('ICECandidate', (iceCandidateData) => {
+			const peerData = this._peerConnections.getPeerData(iceCandidateData.peerId);
+			if (!peerData) return;
 
+			const rtcIceCandidate = new RTCIceCandidate(iceCandidateData.iceCandidate);
+			peerData.connection.addIceCandidate(rtcIceCandidate);
+		});
 		socket.on('removePeer', ({ peerId }) => {
 			console.log('REMOVE_PEER', peerId);
 			this._peerConnections.removePeer(peerId);
