@@ -22,6 +22,7 @@
 
 <button
 	on:click={() => dispatch('click')}
+	on:contextmenu={(e) => dispatch('contextmenu', e)}
 	type={htmlType}
 	class="{icon && !label ? 'btn-icon' : 'btn'} {styles[type]}"
 >

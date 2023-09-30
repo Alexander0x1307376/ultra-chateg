@@ -45,8 +45,9 @@
 		channelDetailsTransferToVisual,
 		isUserInScope
 	} from '$lib/features/channels/channelUtils';
-	import { clickOutside } from '$lib/components/contextMenus/clickOutside';
 	import type { PeerConnections } from '$lib/features/p2p/PeerConnections';
+	import AudioInputMenu from '$lib/components/AudioInputMenu.svelte';
+	import { contextMenuPosition } from '$lib/components/contextMenus/contextMenuPosition';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
@@ -153,10 +154,10 @@
 	// #region Контекстные меню
 	type Position = { x: number; y: number };
 	let contactsContextMenuPosition: Position | undefined;
-	const handleContextMenu = (position: Position | undefined) => {
+	const handleContactsContextMenu = (position: Position | undefined) => {
 		contactsContextMenuPosition = position;
 	};
-	const handleClickOutside = () => {
+	const handleContactsClickOutside = () => {
 		contactsContextMenuPosition = undefined;
 	};
 	// #endregion
@@ -169,6 +170,22 @@
 			}
 		};
 	};
+
+	// #region Микрофон и его контекстое меню
+	let isMicOn = true;
+	const handleToggleMicrophone = () => {
+		isMicOn = !isMicOn;
+	};
+	let audioContextMenuPosition: Position | undefined;
+	const handleAudioContextMenu = (position: Position | undefined) => {
+		audioContextMenuPosition = position;
+	};
+
+	const handleAudioContextMenuClickOutside = () => {
+		audioContextMenuPosition = undefined;
+	};
+
+	// #endregion
 </script>
 
 {#each $peerConnections as [peerId, peerData] (peerId)}
@@ -177,24 +194,40 @@
 
 {#if contactsContextMenuPosition}
 	<div
-		use:clickOutside
-		on:clickOutside={handleClickOutside}
+		use:contextMenuPosition={{
+			clickPosition: contactsContextMenuPosition,
+			outsideClick: handleContactsClickOutside
+		}}
 		style="top: {contactsContextMenuPosition.y}px; left: {contactsContextMenuPosition.x}px;"
-		class="absolute z-10 w-60 bg-surface-500 shadow-md shadow-black/50 rounded-md py-2"
+		class="absolute z-10 w-60 bg-surface-900 shadow-md shadow-black/50 rounded-md py-2"
 	>
 		<ul class="flex flex-col">
 			<li>
-				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left">Профиль</button>
+				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left">Профиль</button>
 			</li>
 			<li>
-				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left">Переместить</button>
+				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left"
+					>Переместить</button
+				>
 			</li>
 			<li>
-				<button class="py-1 px-2 hover:bg-secondary-400 w-full text-left"
+				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left"
 					>Сделать владельцем канала</button
 				>
 			</li>
 		</ul>
+	</div>
+{/if}
+
+{#if audioContextMenuPosition}
+	<div
+		use:contextMenuPosition={{
+			clickPosition: audioContextMenuPosition,
+			outsideClick: handleAudioContextMenuClickOutside
+		}}
+		class="z-10"
+	>
+		<AudioInputMenu />
 	</div>
 {/if}
 
@@ -224,7 +257,7 @@
 				isContactDragging = false;
 			}}
 			on:contextMenuClick={(e) => {
-				handleContextMenu({
+				handleContactsContextMenu({
 					x: e.detail.event.x,
 					y: e.detail.event.y
 				});
@@ -234,7 +267,19 @@
 	<!-- bottom -->
 	<div slot="bottom" class="flex items-center space-x-2">
 		<Ava label={currentUser.name} />
-		<span>{currentUser.name}</span>
+		<span class="grow">{currentUser.name}</span>
+		<span>
+			<Button
+				on:click={handleToggleMicrophone}
+				on:contextmenu={(e) => {
+					handleAudioContextMenu({
+						x: e.detail.x,
+						y: e.detail.y
+					});
+				}}
+				icon={isMicOn ? 'ri:mic-fill' : 'ri:mic-off-fill'}
+			/>
+		</span>
 	</div>
 
 	<!-- main content -->
