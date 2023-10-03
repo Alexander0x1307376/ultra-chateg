@@ -84,7 +84,7 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 		const bufferLength = analyser.frequencyBinCount;
 		this._audioDataArray = new Uint8Array(bufferLength);
 
-		gainNode.gain.value = DEFAULT_VOLUME;
+		gainNode.gain.value = DEFAULT_VOLUME / 100;
 
 		this._gainNode = gainNode;
 		this._audioAnalyserNode = analyser;
