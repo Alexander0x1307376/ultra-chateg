@@ -21,21 +21,15 @@ export type FullPeerData = {
 	streams: MediaStream[];
 };
 
-export type PeerConnectionsState = Map<string, FullPeerData>;
+export type PeerConnectionsState = Map<number, FullPeerData>;
 
 export class PeerConnections implements IStore<PeerConnectionsState> {
-	private _peerData: Map<string, FullPeerData>; // основное хранилище с данными для отображения
-	private _userIndexes: Map<number, FullPeerData>; // те же данные (те же ссылки), но с ключами юзера
+	private _userPeerData: Map<number, FullPeerData>;
 
 	private _subscriptions: ((data: PeerConnectionsState) => void)[];
 
-	get peersByUsers() {
-		return this._userIndexes;
-	}
-
 	constructor() {
-		this._peerData = new Map();
-		this._userIndexes = new Map();
+		this._userPeerData = new Map();
 		this._subscriptions = [];
 
 		this.addPeer = this.addPeer.bind(this);
@@ -50,7 +44,7 @@ export class PeerConnections implements IStore<PeerConnectionsState> {
 
 	subscribe(subscription: (value: PeerConnectionsState) => void) {
 		this._subscriptions.push(subscription);
-		subscription(this._peerData);
+		subscription(this._userPeerData);
 		return () => {
 			this._subscriptions.splice(this._subscriptions.indexOf(subscription), 1);
 		};
@@ -79,38 +73,37 @@ export class PeerConnections implements IStore<PeerConnectionsState> {
 			connection: peer,
 			streams: []
 		};
-		this._peerData.set(peerData.peerId, newPeerData);
-		this._userIndexes.set(peerData.userId, newPeerData);
-		this.emit(this._peerData);
+		this._userPeerData.set(peerData.userId, newPeerData);
+		this.emit(this._userPeerData);
 		return newPeerData;
 	}
 
-	addStreams(peerId: string, streams: MediaStream[]): FullPeerData | undefined {
-		const peerData = this._peerData.get(peerId);
+	addStreams(userId: number, streams: MediaStream[]): FullPeerData | undefined {
+		const peerData = this._userPeerData.get(userId);
 		if (!peerData) {
-			console.log(`[PeerConnections]:addStreams: no peer with id: ${peerId} found`);
+			console.log(`[PeerConnections]:addStreams: no peer data of user with id: ${userId} found`);
 			return;
 		}
 		peerData.streams = streams;
-		this.emit(this._peerData);
+		this.emit(this._userPeerData);
 		return peerData;
 	}
 
-	removePeer(peerId: string) {
-		const peerData = this._peerData.get(peerId);
+	removePeer(userId: number) {
+		const peerData = this._userPeerData.get(userId);
 		if (!peerData) {
-			console.log(`[PeerConnections]:removePeer: no peer with id: ${peerId} found`);
+			console.log(`[PeerConnections]:removePeer: no peer data of user with id: ${userId} found`);
 			return;
 		}
 		this.closeConnectionAndStreams(peerData);
-		this._peerData.delete(peerId);
-		this.emit(this._peerData);
+		this._userPeerData.delete(userId);
+		this.emit(this._userPeerData);
 	}
 
 	removeAllPeers() {
-		this._peerData.forEach(this.closeConnectionAndStreams);
-		this._peerData.clear();
-		this.emit(this._peerData);
+		this._userPeerData.forEach(this.closeConnectionAndStreams);
+		this._userPeerData.clear();
+		this.emit(this._userPeerData);
 	}
 
 	private closeConnectionAndStreams(peerData: FullPeerData) {
@@ -123,20 +116,20 @@ export class PeerConnections implements IStore<PeerConnectionsState> {
 		});
 	}
 
-	getPeerData(peerId: string): FullPeerData | undefined {
-		const peerData = this._peerData.get(peerId);
+	getPeerData(userId: number): FullPeerData | undefined {
+		const peerData = this._userPeerData.get(userId);
 		if (!peerData) {
-			console.log(`[PeerConnections]:getPeerData: no peer with id: ${peerId} found`);
+			console.log(`[PeerConnections]:getPeerData: no peer of user with id: ${userId} found`);
 			return;
 		}
 		return peerData;
 	}
 
 	getPeerDataByUserId(userId: number): FullPeerData | undefined {
-		const peerData = this._userIndexes.get(userId);
+		const peerData = this._userPeerData.get(userId);
 		if (!peerData) {
 			console.log(
-				`[PeerConnections]:getPeerDataByUserId: no peer data by user with id: ${userId} found`
+				`[PeerConnections]:getPeerDataByUserId: no peer data of user with id: ${userId} found`
 			);
 			return;
 		}

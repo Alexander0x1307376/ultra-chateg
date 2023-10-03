@@ -215,7 +215,7 @@
 	$: isVoiceOn = $voiceValue && $voiceValue > 30;
 </script>
 
-{#each $peerConnections as [peerId, peerData] (peerId)}
+{#each $peerConnections as [key, peerData] (key)}
 	<audio use:attachStream={peerData.streams[0]} autoplay />
 {/each}
 

@@ -5,6 +5,7 @@ import type { DevicesService } from '../stream/DevicesService';
 
 export type DisconnectPeerData = {
 	peerId: string;
+	userId: number;
 };
 
 export type IceCandidateData = {
@@ -75,7 +76,7 @@ export class PeerToPeerService {
 			};
 
 			const handleTrack = (event: RTCTrackEvent) => {
-				this._peerConnections.addStreams(peerData.peerId, event.streams as MediaStream[]);
+				this._peerConnections.addStreams(peerData.userId, event.streams as MediaStream[]);
 			};
 
 			const { connection } = this._peerConnections.addPeer(peerData, {
@@ -102,7 +103,7 @@ export class PeerToPeerService {
 		});
 
 		socket.on('sessionDescription', async (sdpData) => {
-			const peerData = this._peerConnections.getPeerData(sdpData.peerId);
+			const peerData = this._peerConnections.getPeerData(sdpData.userId);
 			if (!peerData) return;
 
 			const { connection } = peerData;
@@ -124,15 +125,15 @@ export class PeerToPeerService {
 			});
 		});
 		socket.on('ICECandidate', (iceCandidateData) => {
-			const peerData = this._peerConnections.getPeerData(iceCandidateData.peerId);
+			const peerData = this._peerConnections.getPeerData(iceCandidateData.userId);
 			if (!peerData) return;
 
 			const rtcIceCandidate = new RTCIceCandidate(iceCandidateData.iceCandidate);
 			peerData.connection.addIceCandidate(rtcIceCandidate);
 		});
-		socket.on('removePeer', ({ peerId }) => {
+		socket.on('removePeer', ({ peerId, userId }) => {
 			console.log('REMOVE_PEER', peerId);
-			this._peerConnections.removePeer(peerId);
+			this._peerConnections.removePeer(userId);
 		});
 	}
 }

@@ -21,6 +21,7 @@ export type PeerData = {
 
 export type DisconnectPeerData = {
   peerId: string;
+  userId: number;
 };
 
 export type IceCandidateData = {
@@ -105,7 +106,7 @@ export class PeerToPeerSystem implements ISocketHandler {
     socket: Socket<ClientToServerEvents, ServerToClientEvents>,
     { chatRoom, userData }: MemberLeftData,
   ) {
-    this._socketServer.in(chatRoom).emit("removePeer", { peerId: socket.id });
+    this._socketServer.in(chatRoom).emit("removePeer", { peerId: socket.id, userId: userData.user.id });
   }
 
   socketHandler(socket: Socket<ClientToServerEvents, ServerToClientEvents>, userData: UserData) {
