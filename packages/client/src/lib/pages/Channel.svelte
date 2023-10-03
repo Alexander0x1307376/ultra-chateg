@@ -48,12 +48,18 @@
 	import type { PeerConnections } from '$lib/features/p2p/PeerConnections';
 	import AudioInputMenu from '$lib/components/AudioInputMenu.svelte';
 	import { contextMenuPosition } from '$lib/components/contextMenus/contextMenuPosition';
+	import type { DevicesService } from '$lib/features/stream/DevicesService';
+	import ContactMenu from '$lib/components/ContactMenu.svelte';
+	import { onMount } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import Icon from '@iconify/svelte';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
 	export let currentUser: User;
 	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
 	export let peerConnections: PeerConnections;
+	export let devicesService: DevicesService;
 
 	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
@@ -171,7 +177,7 @@
 		};
 	};
 
-	// #region Микрофон и его контекстое меню
+	// #region контекстое меню аудиоустройств
 	let isMicOn = true;
 	const handleToggleMicrophone = () => {
 		isMicOn = !isMicOn;
@@ -180,12 +186,33 @@
 	const handleAudioContextMenu = (position: Position | undefined) => {
 		audioContextMenuPosition = position;
 	};
-
 	const handleAudioContextMenuClickOutside = () => {
 		audioContextMenuPosition = undefined;
 	};
-
 	// #endregion
+
+	// #region аудиоустройства
+	$: volume = $devicesService.volume;
+	const handleSetVolume = (volume: number) => {
+		devicesService.setVolume(volume);
+	};
+	const handleAudioDeviceChanged = (deviceId: string) => {
+		devicesService.selectAudioDevice(deviceId);
+	};
+
+	$: devicesInfo = $devicesService.audioDevices.map((device) => ({
+		key: device.deviceId,
+		label: device.label
+	}));
+	$: selectedDeviceId = $devicesService.selectedAudioDevice?.deviceId || 'NONE';
+	// #endregion
+
+	let voiceValue: Writable<number> | undefined;
+	onMount(() => {
+		voiceValue = devicesService.noiseValue;
+	});
+
+	$: isVoiceOn = $voiceValue && $voiceValue > 30;
 </script>
 
 {#each $peerConnections as [peerId, peerData] (peerId)}
@@ -198,24 +225,9 @@
 			clickPosition: contactsContextMenuPosition,
 			outsideClick: handleContactsClickOutside
 		}}
-		style="top: {contactsContextMenuPosition.y}px; left: {contactsContextMenuPosition.x}px;"
-		class="absolute z-10 w-60 bg-surface-900 shadow-md shadow-black/50 rounded-md py-2"
+		class="z-10"
 	>
-		<ul class="flex flex-col">
-			<li>
-				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left">Профиль</button>
-			</li>
-			<li>
-				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left"
-					>Переместить</button
-				>
-			</li>
-			<li>
-				<button class="py-1 px-2 hover:bg-secondary-600 rounded w-full text-left"
-					>Сделать владельцем канала</button
-				>
-			</li>
-		</ul>
+		<ContactMenu />
 	</div>
 {/if}
 
@@ -227,7 +239,13 @@
 		}}
 		class="z-10"
 	>
-		<AudioInputMenu />
+		<AudioInputMenu
+			on:volumeChanged={(e) => handleSetVolume(e.detail)}
+			on:audioDeviceChanged={(e) => handleAudioDeviceChanged(e.detail)}
+			{volume}
+			{devicesInfo}
+			{selectedDeviceId}
+		/>
 	</div>
 {/if}
 
@@ -264,22 +282,34 @@
 			}}
 		/>
 	</div>
-	<!-- bottom -->
-	<div slot="bottom" class="flex items-center space-x-2">
-		<Ava label={currentUser.name} />
-		<span class="grow">{currentUser.name}</span>
-		<span>
-			<Button
-				on:click={handleToggleMicrophone}
-				on:contextmenu={(e) => {
-					handleAudioContextMenu({
-						x: e.detail.x,
-						y: e.detail.y
-					});
-				}}
-				icon={isMicOn ? 'ri:mic-fill' : 'ri:mic-off-fill'}
-			/>
-		</span>
+	<!-- bottom Current User Widget -->
+	<div slot="bottom" class="">
+		<div class="flex items-center space-x-2">
+			<Ava label={currentUser.name} />
+			<span class="grow">{currentUser.name}</span>
+			<span>
+				<Button
+					on:click={handleToggleMicrophone}
+					on:contextmenu={(e) => {
+						handleAudioContextMenu({
+							x: e.detail.x,
+							y: e.detail.y
+						});
+					}}
+					icon={isMicOn ? 'ri:mic-fill' : 'ri:mic-off-fill'}
+				/>
+			</span>
+		</div>
+		<div class="flex space-x-2 items-center">
+			<span class="text-green-500">
+				<Icon
+					icon={isVoiceOn ? 'ri:checkbox-blank-circle-fill' : 'ri:checkbox-blank-circle-line'}
+				/>
+			</span>
+			<span>
+				{$voiceValue}
+			</span>
+		</div>
 	</div>
 
 	<!-- main content -->

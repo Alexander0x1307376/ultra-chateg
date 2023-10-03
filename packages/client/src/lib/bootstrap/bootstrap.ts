@@ -6,7 +6,7 @@ import { ChannelsRemoteStore } from '$lib/features/channels/ChannelsRemoteStore'
 import { HttpClient } from '$lib/features/http/HttpClient';
 import { PeerConnections } from '$lib/features/p2p/PeerConnections';
 import { PeerToPeerService } from '$lib/features/p2p/PeerToPeerService';
-import { StreamService } from '$lib/features/stream/StreamService';
+import { DevicesService } from '$lib/features/stream/DevicesService';
 import { RealtimeService } from '$lib/features/webSockets/RealtimeService';
 import { WebsocketConnection } from '$lib/features/webSockets/WebsocketConnection';
 
@@ -25,13 +25,13 @@ export const bootstrap = () => {
 	const channelsRemoteStore = new ChannelsRemoteStore(webSocketConnection);
 	const channelDetailsRemoteStore = new ChannelDetailsRemoteStore(webSocketConnection);
 
-	const streamService = new StreamService();
+	const devicesService = new DevicesService();
 
 	const peerConnections = new PeerConnections();
 	const peerToPeerService = new PeerToPeerService(
 		webSocketConnection,
 		peerConnections,
-		streamService
+		devicesService
 	);
 
 	const realtimeService = new RealtimeService([]);
@@ -45,7 +45,7 @@ export const bootstrap = () => {
 		channelsRemoteStore,
 		channelDetailsRemoteStore,
 		peerToPeerService,
-		streamService,
+		devicesService,
 		peerConnections
 	};
 };

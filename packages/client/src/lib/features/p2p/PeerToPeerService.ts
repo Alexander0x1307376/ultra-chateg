@@ -1,7 +1,7 @@
 import type { Socket } from 'socket.io-client';
 import type { SocketData, WebsocketConnection } from '../webSockets/WebsocketConnection';
 import type { PeerConnections, PeerData } from './PeerConnections';
-import type { StreamService } from '../stream/StreamService';
+import type { DevicesService } from '../stream/DevicesService';
 
 export type DisconnectPeerData = {
 	peerId: string;
@@ -37,17 +37,15 @@ export type ServerToClientEvents = {
 export class PeerToPeerService {
 	private _socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
 	private _peerConnections: PeerConnections;
-	private _streamService: StreamService;
-
-	private _trackCount = 0;
+	private _devicesService: DevicesService;
 
 	constructor(
 		wsConnection: WebsocketConnection,
 		peerConnections: PeerConnections,
-		streamService: StreamService
+		devicesService: DevicesService
 	) {
 		this._peerConnections = peerConnections;
-		this._streamService = streamService;
+		this._devicesService = devicesService;
 
 		this.handleConnectSocket = this.handleConnectSocket.bind(this);
 		this.handleSocket = this.handleSocket.bind(this);
@@ -77,11 +75,7 @@ export class PeerToPeerService {
 			};
 
 			const handleTrack = (event: RTCTrackEvent) => {
-				this._trackCount++;
-				if (this._trackCount === 2) {
-					this._trackCount = 0;
-					this._peerConnections.addStreams(peerData.peerId, event.streams as MediaStream[]);
-				}
+				this._peerConnections.addStreams(peerData.peerId, event.streams as MediaStream[]);
 			};
 
 			const { connection } = this._peerConnections.addPeer(peerData, {
@@ -89,7 +83,7 @@ export class PeerToPeerService {
 				trackHandler: handleTrack.bind(this)
 			});
 
-			const stream = await this._streamService.getMediaStream();
+			const stream = await this._devicesService.getMediaStream();
 			stream.getTracks().forEach((track) => {
 				connection.addTrack(track, stream);
 			});
