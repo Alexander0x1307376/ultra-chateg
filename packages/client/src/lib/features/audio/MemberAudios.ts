@@ -1,3 +1,4 @@
+import type { AuthStore } from '../auth/AuthStore';
 import type { PeerConnections, PeerConnectionsState } from '../p2p/PeerConnections';
 import { BaseStore } from '../store/BaseStore';
 import type { DevicesService } from '../stream/DevicesService';
@@ -22,12 +23,21 @@ const PROCESSING_INTERVAL = 100;
 export class MemberAudios extends BaseStore<AudioState> {
 	private _userAudios: Map<number, UserAudio>;
 
+	private _deviceService: DevicesService;
+	private _authStore: AuthStore;
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private _calculateNoiseInterval: any;
 
-	constructor(peerConnections: PeerConnections, deviceService: DevicesService) {
+	constructor(
+		peerConnections: PeerConnections,
+		deviceService: DevicesService,
+		authStore: AuthStore
+	) {
 		super({});
 		this._userAudios = new Map();
+		this._deviceService = deviceService;
+		this._authStore = authStore;
 
 		this.handlePeerConnectionUpdate = this.handlePeerConnectionUpdate.bind(this);
 		this.startProcess = this.startProcess.bind(this);
@@ -87,6 +97,14 @@ export class MemberAudios extends BaseStore<AudioState> {
 
 	private processing() {
 		const audioState: AudioState = {};
+
+		// добавляем в общий список данные текущего пользователя
+		const authData = this._authStore.authData;
+		if (authData) {
+			const currentUserId = authData.userData.id;
+			audioState[currentUserId] = this._deviceService.audioState.store;
+		}
+		// добавляем данные прочих участников
 		this._userAudios.forEach((userAudioData, userId) => {
 			audioState[userId] = this.getAudioStateItem(userAudioData.analyser, userAudioData.gain);
 		});

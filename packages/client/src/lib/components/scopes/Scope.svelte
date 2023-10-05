@@ -13,14 +13,25 @@
 	import ContactDraggableItem from '../ContactDraggableItem.svelte';
 	import { fade } from 'svelte/transition';
 	import { cubicIn } from 'svelte/easing';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, getContext } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import type { UserVisual } from '$lib/pages/Channel.svelte';
+	import type { Core } from '$lib/bootstrap/bootstrap';
+	import type { AudioStateItem } from '$lib/features/audio/MemberAudios';
+
+	const { memberAudios } = getContext<Core>('core');
 
 	export let scopeData: ScopeDataVisual;
 	export let dragType: string;
 	export let isEditControlsEnabled = true;
 	export let isLeaveButtonVisible = false;
+
+	$: audioIndocators = scopeData.members.reduce((acc, item) => {
+		if (item.id in $memberAudios) {
+			acc[item.id] = $memberAudios[item.id];
+		}
+		return acc;
+	}, {} as Record<string, AudioStateItem>);
 
 	const dispatch = createEventDispatcher<{
 		scopeUpdated: ScopeDataVisual;
@@ -184,7 +195,7 @@
 			{#if scopeData.members.length}
 				{#each scopeData.members as item (item.id)}
 					<div class="relative" animate:flip={{ duration: FLIP_DURATION_MS }}>
-						<ContactDraggableItem {item} />
+						<ContactDraggableItem {item} isAvaHighlighted={audioIndocators[item.id]?.isVoice} />
 						{#if SHADOW_ITEM_MARKER_PROPERTY_NAME in item}
 							<div
 								class="absolute inset-0 border-2 border-dashed rounded-md border-surface-500 visible"

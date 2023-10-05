@@ -214,10 +214,7 @@
 
 	// #region индикаторы звука участников канала
 	let currentUserAudioState = devicesService.audioState;
-	$: memberAudioIndicators = {
-		...$memberAudios,
-		[currentUser.id.toString()]: $currentUserAudioState
-	};
+	$: memberAudioIndicators = $memberAudios;
 	// #endregion
 </script>
 
