@@ -6,6 +6,7 @@
 	export let item: EntityWithAva;
 	export let isDraggable = true;
 	export let icon = '';
+	export let isAvaHighlighted = false;
 </script>
 
 <div
@@ -13,8 +14,11 @@
 		? 'cursor-pointer'
 		: ''}"
 >
-	<div>
+	<div class="relative">
 		<Ava width="w-8" label={item.name} src={item.avaUrl} />
+		{#if isAvaHighlighted}
+			<span class="absolute inset-0 border-green-400 border-[3px] rounded-full" />
+		{/if}
 	</div>
 	<span class="{!icon ? 'grow' : ''} truncate pr-1">{item.id}: {item.name}</span>
 

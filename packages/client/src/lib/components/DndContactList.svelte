@@ -4,6 +4,7 @@
 	import type { EntityWithAva } from '$lib/entities/entities';
 	import { createEventDispatcher } from 'svelte';
 	import ContactDraggableItem from './ContactDraggableItem.svelte';
+	import type { AudioState } from '$lib/features/audio/MemberAudios';
 
 	const dispatch = createEventDispatcher<{
 		dragStart: void;
@@ -16,6 +17,7 @@
 
 	const FLIP_DURATION_MS = 300;
 
+	export let contactsAudioData: AudioState;
 	export let items: EntityWithAva[];
 	export let ownerId: string = '';
 	export let dragType: string;
@@ -113,6 +115,7 @@
 			}}
 		>
 			<ContactDraggableItem
+				isAvaHighlighted={contactsAudioData[item.id]?.isVoice}
 				{isDraggable}
 				{item}
 				icon={ownerId === item.id ? 'ri:vip-crown-line' : ''}

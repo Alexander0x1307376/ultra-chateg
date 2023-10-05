@@ -1,7 +1,14 @@
 import { writable, type Writable } from 'svelte/store';
 import { BaseStore } from '../store/BaseStore';
+import { AudioStateStore } from './AudioStateStore';
 
 export const DEFAULT_VOLUME = 55;
+export const VOICE_THRESHOLD = 40;
+
+export type AudioStateItem = {
+	volume: number;
+	isVoice: boolean;
+};
 
 export type StreamServiceState = {
 	volume: number;
@@ -23,6 +30,8 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 
 	noiseValue: Writable<number>;
 
+	audioState: AudioStateStore;
+
 	constructor() {
 		super({
 			volume: DEFAULT_VOLUME,
@@ -30,6 +39,12 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 			selectedAudioDevice: undefined,
 			isThereVolume: false
 		});
+
+		this.audioState = new AudioStateStore({
+			isVoice: false,
+			volume: DEFAULT_VOLUME
+		});
+
 		this.getMediaStream = this.getMediaStream.bind(this);
 		this.setVolume = this.setVolume.bind(this);
 		this.getMediaDevices = this.getMediaDevices.bind(this);
@@ -74,11 +89,6 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 		analyser.connect(gainNode);
 		gainNode.connect(audioDestination);
 
-		// source -> gainNode -> analyzer -> destination
-		// audioSource.connect(gainNode);
-		// gainNode.connect(analyser);
-		// analyser.connect(audioDestination);
-
 		// анализ аудиопотока
 		analyser.fftSize = 128;
 		const bufferLength = analyser.frequencyBinCount;
@@ -113,6 +123,14 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 			analyser.getByteFrequencyData(dataArray);
 			const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
 			this.noiseValue.set(average);
+
+			// эмитим состояние индикатора только если ему на самом деле есть мсысл меняться
+			if (average > VOICE_THRESHOLD && !this.audioState.store.isVoice) {
+				this.audioState.update((prev) => ({ ...prev, isVoice: true }));
+			}
+			if (average < VOICE_THRESHOLD && this.audioState.store.isVoice) {
+				this.audioState.update((prev) => ({ ...prev, isVoice: false }));
+			}
 		}, 50);
 	}
 
@@ -140,5 +158,6 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 		if (!this._gainNode) return;
 		const volume = clampedVolumePercent / 100;
 		this._gainNode.gain.value = volume;
+		this.audioState.update((prev) => ({ ...prev, volume }));
 	}
 }

@@ -1,4 +1,5 @@
 import { REFRESH_TOKEN_STORAGE_KEY, API_URL } from '$lib/config/config';
+import { MemberAudios } from '$lib/features/audio/MemberAudios';
 import { AuthQueryService } from '$lib/features/auth/AuthQueryService';
 import { AuthStore } from '$lib/features/auth/AuthStore';
 import { ChannelDetailsRemoteStore } from '$lib/features/channels/ChannelDetailsRemoteStore';
@@ -28,6 +29,8 @@ export const bootstrap = () => {
 	const devicesService = new DevicesService();
 
 	const peerConnections = new PeerConnections();
+	const memberAudios = new MemberAudios(peerConnections, devicesService);
+
 	const peerToPeerService = new PeerToPeerService(
 		webSocketConnection,
 		peerConnections,
@@ -46,6 +49,7 @@ export const bootstrap = () => {
 		channelDetailsRemoteStore,
 		peerToPeerService,
 		devicesService,
-		peerConnections
+		peerConnections,
+		memberAudios
 	};
 };

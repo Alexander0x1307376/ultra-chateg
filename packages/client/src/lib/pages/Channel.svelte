@@ -50,9 +50,8 @@
 	import { contextMenuPosition } from '$lib/components/contextMenus/contextMenuPosition';
 	import type { DevicesService } from '$lib/features/stream/DevicesService';
 	import ContactMenu from '$lib/components/ContactMenu.svelte';
-	import { onMount } from 'svelte';
-	import type { Writable } from 'svelte/store';
 	import Icon from '@iconify/svelte';
+	import type { MemberAudios } from '$lib/features/audio/MemberAudios';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
@@ -60,6 +59,7 @@
 	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
 	export let peerConnections: PeerConnections;
 	export let devicesService: DevicesService;
+	export let memberAudios: MemberAudios;
 
 	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
@@ -109,7 +109,8 @@
 
 	// #endregion
 
-	// #region Изменеине данных
+	// #region Изменеине данных скопов
+	// TODO: Перетащить в системы
 	const handleScopeUpdated = (scope: ScopeDataVisual) => {
 		channelDetailsRemoteStore.updateOnServer((prev) => {
 			if (!prev) return prev;
@@ -168,6 +169,7 @@
 	};
 	// #endregion
 
+	// #region экшон присоединения стрима к аудиоэлементу
 	const attachStream = (node: HTMLVideoElement | HTMLAudioElement, stream: MediaStream) => {
 		node.srcObject = stream;
 		return {
@@ -176,8 +178,9 @@
 			}
 		};
 	};
+	// #endregion
 
-	// #region контекстое меню аудиоустройств
+	// #region контекстое меню аудиоустройств текущего пользователя
 	let isMicOn = true;
 	const handleToggleMicrophone = () => {
 		isMicOn = !isMicOn;
@@ -191,7 +194,7 @@
 	};
 	// #endregion
 
-	// #region аудиоустройства
+	// #region аудиоустройства текущего пользователя
 	$: volume = $devicesService.volume;
 	const handleSetVolume = (volume: number) => {
 		devicesService.setVolume(volume);
@@ -205,14 +208,17 @@
 		label: device.label
 	}));
 	$: selectedDeviceId = $devicesService.selectedAudioDevice?.deviceId || 'NONE';
+
+	$: voiceValue = devicesService.noiseValue;
 	// #endregion
 
-	let voiceValue: Writable<number> | undefined;
-	onMount(() => {
-		voiceValue = devicesService.noiseValue;
-	});
-
-	$: isVoiceOn = $voiceValue && $voiceValue > 30;
+	// #region индикаторы звука участников канала
+	let currentUserAudioState = devicesService.audioState;
+	$: memberAudioIndicators = {
+		...$memberAudios,
+		[currentUser.id.toString()]: $currentUserAudioState
+	};
+	// #endregion
 </script>
 
 {#each $peerConnections as [key, peerData] (key)}
@@ -251,7 +257,7 @@
 
 <!-- route /[channelId] - страница конкретного канала -->
 <MainLayout>
-	<!-- sidebarHeader -->
+	<!-- sidebarHeader Заголовок сайдбара -->
 	<div slot="sidebarHeader" class="flex items-center mb-2">
 		<h1 class="grow">Контакты</h1>
 		<Button
@@ -261,9 +267,10 @@
 			}}
 		/>
 	</div>
-	<!-- sidebarBody -->
+	<!-- sidebarBody Список контактов -->
 	<div slot="sidebarBody" class="absolute inset-0 overflow-auto">
 		<DndContactList
+			contactsAudioData={memberAudioIndicators}
 			isDraggable={isCurrentUserOwner}
 			ownerId={$channelDetailsRemoteStore?.ownerId.toString()}
 			items={channelDetailsVisual.members}
@@ -282,7 +289,7 @@
 			}}
 		/>
 	</div>
-	<!-- bottom Current User Widget -->
+	<!-- bottom Current Виджет текущего пользователя -->
 	<div slot="bottom" class="">
 		<div class="flex items-center space-x-2">
 			<Ava label={currentUser.name} />
@@ -303,7 +310,9 @@
 		<div class="flex space-x-2 items-center">
 			<span class="text-green-500">
 				<Icon
-					icon={isVoiceOn ? 'ri:checkbox-blank-circle-fill' : 'ri:checkbox-blank-circle-line'}
+					icon={$currentUserAudioState.isVoice
+						? 'ri:checkbox-blank-circle-fill'
+						: 'ri:checkbox-blank-circle-line'}
 				/>
 			</span>
 			<span>
@@ -312,7 +321,7 @@
 		</div>
 	</div>
 
-	<!-- main content -->
+	<!-- main content Скопы -->
 	<div class="space-y-2 flex flex-col h-full">
 		<!-- header -->
 		<div>
