@@ -157,11 +157,11 @@
 	// #region Контекстные меню
 	type Position = { x: number; y: number };
 	let contactsContextMenuPosition: Position | undefined;
-	let contactsContextMenuSelectedId: string | undefined;
+	let contactsContextMenuSelectedId: number | undefined;
 	const handleContactsContextMenu = (
 		data: { position: Position | undefined; itemId: string } | undefined
 	) => {
-		contactsContextMenuSelectedId = data?.itemId;
+		contactsContextMenuSelectedId = Number(data?.itemId);
 		contactsContextMenuPosition = data?.position;
 	};
 	const handleContactsClickOutside = () => {
@@ -207,24 +207,11 @@
 	let currentUserAudioState = devicesService.audioState;
 	$: memberAudioIndicators = $memberAudios;
 	// #endregion
-
-	// #region Управляемые стримы мемберов (Вероятно, не нужно)
-	// $: memberStreams = getMemberStreams($peerConnections, currentUser);
-	// const getMemberStreams = (peerConnections: PeerConnectionsState, localUser: User) => {
-	// 	const result: [number, MediaStream][] = [];
-	// 	peerConnections.forEach((peerData, key) => {
-	// 		const memberAudio = memberAudios.userAudios.get(key);
-	// 		if (!memberAudio || key === localUser.id) return;
-	// 		result.push([key, memberAudio.stream]);
-	// 	});
-	// 	return result;
-	// };
-	// #endregion
 </script>
 
 <MemberAudiosComponent />
 
-{#if contactsContextMenuPosition}
+{#if contactsContextMenuPosition && contactsContextMenuSelectedId}
 	<div
 		use:contextMenuPosition={{
 			clickPosition: contactsContextMenuPosition,

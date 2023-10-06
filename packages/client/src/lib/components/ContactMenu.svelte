@@ -3,29 +3,33 @@
 	import ContextMenuCard from './contextMenus/ContextMenuCard.svelte';
 	import type { Core } from '$lib/bootstrap/bootstrap';
 
-	export let selectedMemberId: string | undefined = undefined;
+	export let selectedMemberId: number;
 	const { memberAudios, authStore, channelDetailsRemoteStore } = getContext<Core>('core');
 	const DEFAULT_VOLUME = 55;
 
 	let localVolume: number = DEFAULT_VOLUME;
-	let isCurrentUser: boolean;
-	let isOwner: boolean;
+	$: currentUserId = $authStore?.userData.id;
+	$: ownerId = $channelDetailsRemoteStore?.ownerId;
+	$: isOwner = currentUserId === ownerId;
+	$: isCurrentUser = currentUserId === selectedMemberId;
+
 	onMount(() => {
-		if (!selectedMemberId) return;
-
-		const currentUserId = $authStore?.userData.id;
-		const ownerId = $channelDetailsRemoteStore?.ownerId;
-
-		isOwner = currentUserId === ownerId;
-		isCurrentUser = currentUserId?.toString() === selectedMemberId;
-
 		if (!isCurrentUser) localVolume = Math.trunc($memberAudios[selectedMemberId].volume);
 	});
 
 	$: localVolume && setVolume(localVolume);
 	const setVolume = (inputVolume: number) => {
 		if (!selectedMemberId) return;
-		memberAudios.setMemberVolume(parseInt(selectedMemberId), inputVolume);
+		memberAudios.setMemberVolume(selectedMemberId, inputVolume);
+	};
+
+	const handleChangeOwner = () => {
+		if (!(isOwner && currentUserId)) return;
+		channelDetailsRemoteStore.updateOnServer((prev) => {
+			if (!prev) return prev;
+			prev.ownerId = selectedMemberId;
+			return prev;
+		});
 	};
 </script>
 
@@ -39,8 +43,9 @@
 		</li>
 		{#if isOwner && !isCurrentUser}
 			<li>
-				<button class="p-2 hover:bg-secondary-600 rounded w-full text-left"
-					>Сделать владельцем канала</button
+				<button
+					class="p-2 hover:bg-secondary-600 rounded w-full text-left"
+					on:click={handleChangeOwner}>Сделать владельцем канала</button
 				>
 			</li>
 		{/if}

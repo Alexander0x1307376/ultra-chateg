@@ -82,7 +82,7 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 			};
 		}
 
-		console.log(`[ChannelDetailsRemoteStore]:subscribe`, this._store);
+		// console.log(`[ChannelDetailsRemoteStore]:subscribe`, this._store);
 
 		// если это первый подписчик и channelId установлен - сообщаем серверу, что хотим получать обновления
 		if (this.subscriptionsCount === 0 && channelId) {
@@ -92,7 +92,7 @@ export class ChannelDetailsRemoteStore extends BaseStore<ChannelDetailsState> {
 
 		const unsubscribe = super.subscribe(subscription);
 		return () => {
-			console.log(`[ChannelDetailsRemoteStore]:unsubscribe`, channelId);
+			// console.log(`[ChannelDetailsRemoteStore]:unsubscribe`, channelId);
 			unsubscribe();
 			// если это последний подписчик - отписываемся от обновлений с сервера
 			if (this.subscriptionsCount === 0) {
