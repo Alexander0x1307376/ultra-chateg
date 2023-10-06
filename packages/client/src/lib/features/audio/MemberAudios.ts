@@ -99,6 +99,12 @@ export class MemberAudios extends BaseStore<AudioState> {
 
 	private processing() {
 		const newState: Record<number, AudioStateItem> = {};
+
+		const localUserId = this._authStore.authData?.userData.id;
+		const localAudioState = this._deviceService.audioState.store;
+
+		if (localUserId) newState[localUserId] = localAudioState;
+
 		this._userAudios.forEach((userAudioData, userId) => {
 			newState[userId] = {
 				isVoice: this.getVoiceIndicator(userAudioData.analyser),

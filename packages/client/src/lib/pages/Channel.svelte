@@ -232,7 +232,7 @@
 		}}
 		class="z-10"
 	>
-		<ContactMenu itemId={contactsContextMenuSelectedId} />
+		<ContactMenu selectedMemberId={contactsContextMenuSelectedId} />
 	</div>
 {/if}
 

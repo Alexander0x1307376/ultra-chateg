@@ -6,11 +6,6 @@ export const DEFAULT_VOLUME = 55;
 export const VOICE_THRESHOLD = 40;
 export const FFT_SIZE = 128;
 
-export type AudioStateItem = {
-	volume: number;
-	isVoice: boolean;
-};
-
 export type StreamServiceState = {
 	audioDevices: MediaDeviceInfo[];
 	selectedAudioDevice: MediaDeviceInfo | undefined;
