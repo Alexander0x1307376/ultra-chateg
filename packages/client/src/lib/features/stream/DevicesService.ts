@@ -4,6 +4,7 @@ import { AudioStateStore } from './AudioStateStore';
 
 export const DEFAULT_VOLUME = 55;
 export const VOICE_THRESHOLD = 40;
+export const FFT_SIZE = 128;
 
 export type AudioStateItem = {
 	volume: number;
@@ -11,10 +12,8 @@ export type AudioStateItem = {
 };
 
 export type StreamServiceState = {
-	volume: number;
 	audioDevices: MediaDeviceInfo[];
 	selectedAudioDevice: MediaDeviceInfo | undefined;
-	isThereVolume: boolean;
 };
 
 export class DevicesService extends BaseStore<StreamServiceState> {
@@ -34,10 +33,8 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 
 	constructor() {
 		super({
-			volume: DEFAULT_VOLUME,
 			audioDevices: [],
-			selectedAudioDevice: undefined,
-			isThereVolume: false
+			selectedAudioDevice: undefined
 		});
 
 		this.audioState = new AudioStateStore({
@@ -90,7 +87,7 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 		gainNode.connect(audioDestination);
 
 		// анализ аудиопотока
-		analyser.fftSize = 128;
+		analyser.fftSize = FFT_SIZE;
 		const bufferLength = analyser.frequencyBinCount;
 		this._audioDataArray = new Uint8Array(bufferLength);
 
@@ -151,13 +148,12 @@ export class DevicesService extends BaseStore<StreamServiceState> {
 		super.update((state) => ({ ...state, selectedAudioDevice }));
 	}
 
-	setVolume(volumePercent: number) {
-		const clampedVolumePercent = Math.min(Math.max(volumePercent, 0), 100);
-		this._store.volume = clampedVolumePercent;
+	setVolume(inputVolumePercent: number) {
+		const clampedVolumePercent = Math.min(Math.max(inputVolumePercent, 0), 100);
 		this.set(this._store);
 		if (!this._gainNode) return;
 		const volume = clampedVolumePercent / 100;
 		this._gainNode.gain.value = volume;
-		this.audioState.update((prev) => ({ ...prev, volume }));
+		this.audioState.update((prev) => ({ ...prev, volume: clampedVolumePercent }));
 	}
 }

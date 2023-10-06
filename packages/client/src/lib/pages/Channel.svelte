@@ -36,30 +36,26 @@
 	import type { User } from '$lib/entities/entities';
 	import { fade, scale } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import type {
-		ChannelDetailsRemoteStore,
-		ChannelDetailsTransfer
-	} from '$lib/features/channels/ChannelDetailsRemoteStore';
+	import type { ChannelDetailsTransfer } from '$lib/features/channels/ChannelDetailsRemoteStore';
 	import { goto } from '$app/navigation';
 	import {
 		channelDetailsTransferToVisual,
 		isUserInScope
 	} from '$lib/features/channels/channelUtils';
-	import type { PeerConnections } from '$lib/features/p2p/PeerConnections';
 	import AudioInputMenu from '$lib/components/AudioInputMenu.svelte';
 	import { contextMenuPosition } from '$lib/components/contextMenus/contextMenuPosition';
-	import type { DevicesService } from '$lib/features/stream/DevicesService';
 	import ContactMenu from '$lib/components/ContactMenu.svelte';
 	import Icon from '@iconify/svelte';
-	import type { MemberAudios } from '$lib/features/audio/MemberAudios';
+	import MemberAudiosComponent from '$lib/components/MemberAudios.svelte';
+	import { getContext } from 'svelte';
+	import type { Core } from '$lib/bootstrap/bootstrap';
 
 	// channelDetailsRemoteStore ---> channelVisual ---> channelTransfer ---> socketEmit ---> channelDetailsRemoteStore
 
+	const core = getContext<Core>('core');
+	const { channelDetailsRemoteStore, devicesService, memberAudios } = core;
+
 	export let currentUser: User;
-	export let channelDetailsRemoteStore: ChannelDetailsRemoteStore;
-	export let peerConnections: PeerConnections;
-	export let devicesService: DevicesService;
-	export let memberAudios: MemberAudios;
 
 	$: isCurrentUserOwner = $channelDetailsRemoteStore?.ownerId == currentUser.id;
 
@@ -161,22 +157,15 @@
 	// #region Контекстные меню
 	type Position = { x: number; y: number };
 	let contactsContextMenuPosition: Position | undefined;
-	const handleContactsContextMenu = (position: Position | undefined) => {
-		contactsContextMenuPosition = position;
+	let contactsContextMenuSelectedId: string | undefined;
+	const handleContactsContextMenu = (
+		data: { position: Position | undefined; itemId: string } | undefined
+	) => {
+		contactsContextMenuSelectedId = data?.itemId;
+		contactsContextMenuPosition = data?.position;
 	};
 	const handleContactsClickOutside = () => {
 		contactsContextMenuPosition = undefined;
-	};
-	// #endregion
-
-	// #region экшон присоединения стрима к аудиоэлементу
-	const attachStream = (node: HTMLVideoElement | HTMLAudioElement, stream: MediaStream) => {
-		node.srcObject = stream;
-		return {
-			update: (newStream: MediaStream) => {
-				node.srcObject = newStream;
-			}
-		};
 	};
 	// #endregion
 
@@ -195,7 +184,9 @@
 	// #endregion
 
 	// #region аудиоустройства текущего пользователя
-	$: volume = $devicesService.volume;
+	// $: volume = $devicesService.volume;
+	$: audioState = devicesService.audioState;
+	$: volume = $audioState.volume;
 	const handleSetVolume = (volume: number) => {
 		devicesService.setVolume(volume);
 	};
@@ -216,11 +207,22 @@
 	let currentUserAudioState = devicesService.audioState;
 	$: memberAudioIndicators = $memberAudios;
 	// #endregion
+
+	// #region Управляемые стримы мемберов (Вероятно, не нужно)
+	// $: memberStreams = getMemberStreams($peerConnections, currentUser);
+	// const getMemberStreams = (peerConnections: PeerConnectionsState, localUser: User) => {
+	// 	const result: [number, MediaStream][] = [];
+	// 	peerConnections.forEach((peerData, key) => {
+	// 		const memberAudio = memberAudios.userAudios.get(key);
+	// 		if (!memberAudio || key === localUser.id) return;
+	// 		result.push([key, memberAudio.stream]);
+	// 	});
+	// 	return result;
+	// };
+	// #endregion
 </script>
 
-{#each $peerConnections as [key, peerData] (key)}
-	<audio use:attachStream={peerData.streams[0]} autoplay />
-{/each}
+<MemberAudiosComponent />
 
 {#if contactsContextMenuPosition}
 	<div
@@ -230,7 +232,7 @@
 		}}
 		class="z-10"
 	>
-		<ContactMenu />
+		<ContactMenu itemId={contactsContextMenuSelectedId} />
 	</div>
 {/if}
 
@@ -280,8 +282,11 @@
 			}}
 			on:contextMenuClick={(e) => {
 				handleContactsContextMenu({
-					x: e.detail.event.x,
-					y: e.detail.event.y
+					position: {
+						x: e.detail.event.x,
+						y: e.detail.event.y
+					},
+					itemId: e.detail.itemId
 				});
 			}}
 		/>

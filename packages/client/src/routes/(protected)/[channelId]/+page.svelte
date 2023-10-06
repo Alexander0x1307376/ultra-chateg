@@ -15,10 +15,4 @@
 </script>
 
 <!-- route /[channelId] -->
-<Channel
-	{currentUser}
-	{channelDetailsRemoteStore}
-	{peerConnections}
-	{devicesService}
-	{memberAudios}
-/>
+<Channel {currentUser} />

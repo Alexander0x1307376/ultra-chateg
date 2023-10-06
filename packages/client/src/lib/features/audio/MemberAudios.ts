@@ -4,9 +4,7 @@ import { BaseStore } from '../store/BaseStore';
 import type { DevicesService } from '../stream/DevicesService';
 
 export type UserAudio = {
-	stream: MediaStream;
 	analyser: AnalyserNode;
-	gain: GainNode;
 };
 
 export type AudioStateItem = {
@@ -22,6 +20,9 @@ const PROCESSING_INTERVAL = 100;
 
 export class MemberAudios extends BaseStore<AudioState> {
 	private _userAudios: Map<number, UserAudio>;
+	get userAudios() {
+		return this._userAudios;
+	}
 
 	private _deviceService: DevicesService;
 	private _authStore: AuthStore;
@@ -44,6 +45,7 @@ export class MemberAudios extends BaseStore<AudioState> {
 		this.stopProcess = this.stopProcess.bind(this);
 		this.processing = this.processing.bind(this);
 		this.initAudioControls = this.initAudioControls.bind(this);
+		this.setMemberVolume = this.setMemberVolume.bind(this);
 
 		peerConnections.subscribe(this.handlePeerConnectionUpdate);
 	}
@@ -96,52 +98,51 @@ export class MemberAudios extends BaseStore<AudioState> {
 	}
 
 	private processing() {
-		const audioState: AudioState = {};
-
-		// добавляем в общий список данные текущего пользователя
-		const authData = this._authStore.authData;
-		if (authData) {
-			const currentUserId = authData.userData.id;
-			audioState[currentUserId] = this._deviceService.audioState.store;
-		}
-		// добавляем данные прочих участников
+		const newState: Record<number, AudioStateItem> = {};
 		this._userAudios.forEach((userAudioData, userId) => {
-			audioState[userId] = this.getAudioStateItem(userAudioData.analyser, userAudioData.gain);
+			newState[userId] = {
+				isVoice: this.getVoiceIndicator(userAudioData.analyser),
+				volume: this._store[userId]?.volume || DEFAULT_VOLUME
+			};
 		});
-		this.set(audioState);
+		this.set(newState);
 	}
 
-	private getAudioStateItem(analyserNode: AnalyserNode, gainNode: GainNode): AudioStateItem {
+	private getVoiceIndicator(analyserNode: AnalyserNode): boolean {
 		const bufferLength = analyserNode.frequencyBinCount;
 		const dataArray = new Uint8Array(bufferLength);
 		analyserNode.getByteFrequencyData(dataArray);
 		const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
-		return {
-			isVoice: average > VOICE_THRESHOLD,
-			volume: gainNode.gain.value
-		};
+		return average > VOICE_THRESHOLD;
+	}
+
+	setMemberVolume(memberId: number, inputVolumePercent: number) {
+		const member = this._userAudios.get(memberId);
+		if (!member) return;
+		const clampedVolumePercent = Math.min(Math.max(inputVolumePercent, 0), 100);
+		this.update((prev) => {
+			const memberAudio = prev[memberId.toString()];
+			const newMemberAudio: AudioStateItem = {
+				isVoice: memberAudio.isVoice,
+				volume: clampedVolumePercent
+			};
+			prev[memberId.toString()] = newMemberAudio;
+			return prev;
+		});
 	}
 
 	private initAudioControls(stream: MediaStream): UserAudio {
 		const audioContext = new window.AudioContext();
 
 		const audioSource = audioContext.createMediaStreamSource(stream);
-		const gainNode = audioContext.createGain();
 		const analyser = audioContext.createAnalyser();
-		const audioDestination = audioContext.createMediaStreamDestination();
 
 		// source -> analyzer -> gainNode -> destination
 		audioSource.connect(analyser);
-		analyser.connect(gainNode);
-		gainNode.connect(audioDestination);
 		analyser.fftSize = FFT_SIZE;
 
-		gainNode.gain.value = DEFAULT_VOLUME / 100;
-
 		return {
-			analyser,
-			gain: gainNode,
-			stream: audioDestination.stream
+			analyser
 		};
 	}
 }

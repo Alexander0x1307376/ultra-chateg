@@ -1,7 +1,21 @@
 <script lang="ts">
+	import { getContext, onMount } from 'svelte';
 	import ContextMenuCard from './contextMenus/ContextMenuCard.svelte';
+	import type { Core } from '$lib/bootstrap/bootstrap';
 
-	let volume = 0;
+	export let itemId: string | undefined = undefined;
+	const { memberAudios } = getContext<Core>('core');
+
+	let localVolume: number;
+	onMount(() => {
+		if (itemId) localVolume = Math.trunc($memberAudios[itemId].volume);
+	});
+
+	$: localVolume && setVolume(localVolume);
+	const setVolume = (inputVolume: number) => {
+		if (!itemId) return;
+		memberAudios.setMemberVolume(parseInt(itemId), inputVolume);
+	};
 </script>
 
 <ContextMenuCard>
@@ -18,9 +32,12 @@
 			>
 		</li>
 		<li class="border-y-2 border-surface-600 my-1 px-2">
-			<p>Громкость пользователя</p>
+			<span class="inline-flex space-x-1">
+				<p>Громкость пользователя</p>
+				<span>{localVolume}%</span>
+			</span>
 			<div class="py-2">
-				<input type="range" bind:value={volume} max="100" />
+				<input type="range" bind:value={localVolume} max="100" />
 			</div>
 		</li>
 	</ul>
